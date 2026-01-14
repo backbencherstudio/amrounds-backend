@@ -55,11 +55,25 @@ model User {
   domain     String? @unique
   avatar     String?
 
+  // New value
+  credentials          String?
+  training_practice    String?
+  address              String?
+  current_practice     String?
+  bio                  String?
+  instagram            String?
+  linkedin             String?
+  twitter_x            String?
+  facebook             String?
+  verifiy_document     String?
+  approved             Boolean? @default(false)
+  email_notification   Boolean? @default(true)
+  website_notification Boolean? @default(true)
+
   phone_number  String?
   country       String?
   state         String?
   city          String?
-  address       String?
   zip_code      String?
   gender        String?
   date_of_birth DateTime? @db.Date
@@ -87,6 +101,8 @@ model User {
   roles                Role[]
   role_users           RoleUser[]
   payment_transactions PaymentTransaction[]
+  supports             Support[]
+  questions            Questions[]
 
   @@map("users")
 }
@@ -422,6 +438,78 @@ model UserSetting {
   value String?
 
   @@map("user_settings")
+}
+
+enum difficulty {
+  Intern
+  Board
+  Senior
+}
+
+enum topic {
+  Anesthesia_Medicine
+  Cancer
+  Cleft_Craniofacial
+  Cosmetics
+  Dentoalveolar
+  Implants
+  Orthognathic
+  Pathology
+  Recontraction
+  TMJ
+  Trauma
+}
+
+// Questions model
+model Questions {
+  id         String    @id @default(cuid())
+  created_at DateTime  @default(now())
+  updated_at DateTime  @default(now())
+  deleted_at DateTime?
+
+  question       String?
+  question_title String?
+
+  explanation String?
+
+  user_id String?
+  user    User?   @relation(fields: [user_id], references: [id])
+
+  difficulty    difficulty[]
+  topic         topic[]
+  answerOptions AnswerOptions[]
+
+  @@map("questions")
+}
+
+model AnswerOptions {
+  id          String     @id @default(cuid())
+  created_at  DateTime   @default(now())
+  updated_at  DateTime   @default(now())
+  deleted_at  DateTime?
+  answer      String?
+  is_correct  Boolean?   @default(false)
+  question_id String?
+  question    Questions? @relation(fields: [question_id], references: [id])
+
+  @@map("answer_options")
+}
+
+//Help and Support 
+model Support {
+  id         String    @id @default(cuid())
+  created_at DateTime  @default(now())
+  updated_at DateTime  @default(now())
+  deleted_at DateTime?
+
+  privacy_policy      String?
+  disclaimer          String?
+  terms_of_conditions String?
+
+  user_id String?
+  user    User?   @relation(fields: [user_id], references: [id])
+
+  @@map("supports")
 }
 
 // this table stores example
