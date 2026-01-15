@@ -20,7 +20,9 @@ export class LocalAdapter implements IStorage {
    * @returns
    */
   url(key: string): string {
-    return `${process.env.APP_URL}${this._config.connection.publicUrl}/${key}`;
+    const publicUrl = this._config.connection.publicUrl.replace(/\/$/, '');
+    const cleanKey = key.replace(/^\//, '');
+    return `${process.env.APP_URL}${publicUrl}/${cleanKey}`;
   }
 
   /**
