@@ -88,6 +88,7 @@ export default () => ({
     websiteInfo: '/website-info',
     // chat
     attachment: '/attachment',
+    question: '/question/',
   },
 
   defaultUser: {
