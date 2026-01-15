@@ -1,6 +1,12 @@
 -- CreateEnum
 CREATE TYPE "MessageStatus" AS ENUM ('PENDING', 'SENT', 'DELIVERED', 'READ');
 
+-- CreateEnum
+CREATE TYPE "difficulty" AS ENUM ('Intern', 'Board', 'Senior');
+
+-- CreateEnum
+CREATE TYPE "topic" AS ENUM ('Anesthesia_Medicine', 'Cancer', 'Cleft_Craniofacial', 'Cosmetics', 'Dentoalveolar', 'Implants', 'Orthognathic', 'Pathology', 'Recontraction', 'TMJ', 'Trauma');
+
 -- CreateTable
 CREATE TABLE "accounts" (
     "id" TEXT NOT NULL,
@@ -38,11 +44,23 @@ CREATE TABLE "users" (
     "password" VARCHAR(255),
     "domain" TEXT,
     "avatar" TEXT,
+    "credentials" TEXT,
+    "training_practice" TEXT,
+    "address" TEXT,
+    "current_practice" TEXT,
+    "bio" TEXT,
+    "instagram" TEXT,
+    "linkedin" TEXT,
+    "twitter_x" TEXT,
+    "facebook" TEXT,
+    "verifiy_document" TEXT,
+    "approved" BOOLEAN DEFAULT false,
+    "email_notification" BOOLEAN DEFAULT true,
+    "website_notification" BOOLEAN DEFAULT true,
     "phone_number" TEXT,
     "country" TEXT,
     "state" TEXT,
     "city" TEXT,
-    "address" TEXT,
     "zip_code" TEXT,
     "gender" TEXT,
     "date_of_birth" DATE,
@@ -318,6 +336,49 @@ CREATE TABLE "user_settings" (
 );
 
 -- CreateTable
+CREATE TABLE "questions" (
+    "id" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "deleted_at" TIMESTAMP(3),
+    "question" TEXT,
+    "question_title" TEXT,
+    "explanation" TEXT,
+    "user_id" TEXT,
+    "difficulty" "difficulty",
+    "topic" "topic"[],
+
+    CONSTRAINT "questions_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "answer_options" (
+    "id" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "deleted_at" TIMESTAMP(3),
+    "option_text" TEXT,
+    "is_correct" BOOLEAN DEFAULT false,
+    "question_id" TEXT,
+
+    CONSTRAINT "answer_options_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "supports" (
+    "id" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "deleted_at" TIMESTAMP(3),
+    "privacy_policy" TEXT,
+    "disclaimer" TEXT,
+    "terms_of_conditions" TEXT,
+    "user_id" TEXT,
+
+    CONSTRAINT "supports_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "_PermissionToRole" (
     "A" TEXT NOT NULL,
     "B" TEXT NOT NULL,
@@ -402,6 +463,15 @@ ALTER TABLE "user_settings" ADD CONSTRAINT "user_settings_user_id_fkey" FOREIGN 
 
 -- AddForeignKey
 ALTER TABLE "user_settings" ADD CONSTRAINT "user_settings_setting_id_fkey" FOREIGN KEY ("setting_id") REFERENCES "settings"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "questions" ADD CONSTRAINT "questions_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "answer_options" ADD CONSTRAINT "answer_options_question_id_fkey" FOREIGN KEY ("question_id") REFERENCES "questions"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "supports" ADD CONSTRAINT "supports_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "_PermissionToRole" ADD CONSTRAINT "_PermissionToRole_A_fkey" FOREIGN KEY ("A") REFERENCES "permissions"("id") ON DELETE CASCADE ON UPDATE CASCADE;
