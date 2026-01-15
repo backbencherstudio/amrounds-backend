@@ -84,11 +84,12 @@ export default () => ({
     package: '/package',
     destination: '/destination',
     blog: '/blog',
-    avatar: '/avatar',
+    avatar: '/avatars',
     websiteInfo: '/website-info',
     // chat
     attachment: '/attachment',
     question: '/question/',
+    verification_doc: '/verification-docs',
   },
 
   defaultUser: {
