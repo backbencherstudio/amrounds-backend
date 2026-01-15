@@ -467,15 +467,22 @@ model Questions {
   updated_at DateTime  @default(now())
   deleted_at DateTime?
 
-  question       String?
+  question_id String?
+
+  question_steam String?
   question_title String?
 
-  explanation String?
+  explanation       String?
+  explanation_image String?
+  why_incorrect     String?
+  pimping_point     String?
+  memory_trick      String?
+  referance         String?
 
   user_id String?
   user    User?   @relation(fields: [user_id], references: [id])
 
-  difficulty    difficulty[]
+  difficulty    difficulty?
   topic         topic[]
   answerOptions AnswerOptions[]
 
