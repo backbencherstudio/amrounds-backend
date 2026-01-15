@@ -331,12 +331,34 @@ export class AuthService {
     name,
     email,
     password,
+    credentials,
+    training_practice,
+    address,
+    current_practice,
+    bio,
+    instagram,
+    linkedin,
+    twitter_x,
+    facebook,
     type,
+    avatar,
+    verification_doc,
   }: {
     name: string;
     email: string;
     password: string;
+    credentials: string;
+    training_practice: string;
+    address: string;
+    current_practice?: string;
+    bio?: string;
+    instagram?: string;
+    linkedin?: string;
+    twitter_x?: string;
+    facebook?: string;
     type?: string;
+    avatar: Express.Multer.File;
+    verification_doc?: Express.Multer.File;
   }) {
     try {
       // Check if email already exist
@@ -352,11 +374,41 @@ export class AuthService {
         };
       }
 
+      // upload avatar
+      const avatarName = `${StringHelper.randomString()}${avatar.originalname}`;
+      await SojebStorage.put(
+        appConfig().storageUrl.avatar + avatarName,
+        avatar.buffer,
+      );
+
+      // upload verification doc
+      let verificationDocName = null;
+      if (verification_doc) {
+        verificationDocName = `${StringHelper.randomString()}${
+          verification_doc.originalname
+        }`;
+        await SojebStorage.put(
+          appConfig().storageUrl.verification_doc + verificationDocName,
+          verification_doc.buffer,
+        );
+      }
+
       const user = await this.userRepository.createUser({
         name: name,
         email: email,
         password: password,
+        credentials: credentials,
+        training_practice: training_practice,
+        address: address,
+        current_practice: current_practice,
+        bio: bio,
+        instagram: instagram,
+        linkedin: linkedin,
+        twitter_x: twitter_x,
+        facebook: facebook,
         type: type,
+        avatar: avatarName,
+        verifiy_document: verificationDocName,
       });
 
       if (user == null && user.success == false) {
