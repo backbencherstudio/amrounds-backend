@@ -183,6 +183,16 @@ export class AuthService {
     });
 
     if (user) {
+      if (user.type != 'admin') {
+        if (user.status == 0 || user.email_verified_at == null) {
+          throw new UnauthorizedException('User not verified');
+        }
+        if (user.approved_at == null || !user.approved) {
+          throw new UnauthorizedException(
+            'User not approved! Please wait for approval',
+          );
+        }
+      }
       const _isValidPassword = await this.userRepository.validatePassword({
         email: email,
         password: _password,
@@ -377,7 +387,7 @@ export class AuthService {
       // upload avatar
       const avatarName = `${StringHelper.randomString()}${avatar.originalname}`;
       await SojebStorage.put(
-        appConfig().storageUrl.avatar + avatarName,
+        appConfig().storageUrl.avatar + '/' + avatarName,
         avatar.buffer,
       );
 
@@ -388,7 +398,7 @@ export class AuthService {
           verification_doc.originalname
         }`;
         await SojebStorage.put(
-          appConfig().storageUrl.verification_doc + verificationDocName,
+          appConfig().storageUrl.verification_doc + '/' + verificationDocName,
           verification_doc.buffer,
         );
       }
