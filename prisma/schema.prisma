@@ -103,6 +103,10 @@ model User {
   payment_transactions PaymentTransaction[]
   supports             Support[]
   questions            Questions[]
+  educations           Education[]
+  experiences          Experience[]
+  skills               Skill[]
+  publications         Publication[]
 
   @@map("users")
 }
@@ -534,3 +538,73 @@ model Support {
 //   tenant    Organization? @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
 //   @@map("posts")
 // }
+
+// ---------------Education model-------------------
+model Education {
+  id         String    @id @default(cuid())
+  created_at DateTime  @default(now())
+  updated_at DateTime  @default(now())
+  deleted_at DateTime?
+
+  user_id String?
+  user    User?   @relation(fields: [user_id], references: [id])
+
+  degree      String?
+  description String?
+  institute   String?
+  year        String?
+
+  @@map("educations")
+}
+
+// ---------------Experience model-------------------
+model Experience {
+  id         String    @id @default(cuid())
+  created_at DateTime  @default(now())
+  updated_at DateTime  @default(now())
+  deleted_at DateTime?
+
+  user_id String?
+  user    User?   @relation(fields: [user_id], references: [id])
+
+  company    String?
+  position   String?
+  location   String?
+  start_date String?
+  end_date   String?
+
+  @@map("experiences")
+}
+
+// ---------------Skill model-------------------
+model Skill {
+  id         String    @id @default(cuid())
+  created_at DateTime  @default(now())
+  updated_at DateTime  @default(now())
+  deleted_at DateTime?
+
+  user_id String?
+  user    User?   @relation(fields: [user_id], references: [id])
+
+  name String?
+
+  @@map("skills")
+}
+
+// --------------- Publications model-------------------
+model Publication {
+  id         String    @id @default(cuid())
+  created_at DateTime  @default(now())
+  updated_at DateTime  @default(now())
+  deleted_at DateTime?
+
+  user_id String?
+  user    User?   @relation(fields: [user_id], references: [id])
+
+  title String?
+  topic String?
+  link  String?
+  year  String?
+
+  @@map("publications")
+}

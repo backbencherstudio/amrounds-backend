@@ -8,6 +8,7 @@ import {
   Post,
   Req,
   Res,
+  UploadedFiles,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -15,7 +16,10 @@ import {
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Request, Response } from 'express';
 import { memoryStorage } from 'multer';
-import { FileInterceptor } from '@nestjs/platform-express';
+import {
+  FileInterceptor,
+  FileFieldsInterceptor,
+} from '@nestjs/platform-express';
 import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -51,11 +55,27 @@ export class AuthController {
 
   @ApiOperation({ summary: 'Register a user' })
   @Post('register')
-  async create(@Body() data: CreateUserDto) {
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'avatar', maxCount: 1 },
+      { name: 'verification_doc', maxCount: 1 },
+    ]),
+  )
+  async create(
+    @Body() data: CreateUserDto,
+    @UploadedFiles()
+    files: {
+      avatar?: Express.Multer.File[];
+      verification_doc?: Express.Multer.File[];
+    },
+  ) {
     try {
       const name = data.name;
       const email = data.email;
       const password = data.password;
+      const credentials = data.credentials;
+      const training_practice = data.training_practice;
+      const address = data.address;
       const type = data.type;
 
       if (!name) {
@@ -71,12 +91,47 @@ export class AuthController {
           HttpStatus.UNAUTHORIZED,
         );
       }
+      if (!credentials) {
+        throw new HttpException(
+          'Credentials not provided',
+          HttpStatus.UNAUTHORIZED,
+        );
+      }
+      if (!training_practice) {
+        throw new HttpException(
+          'Training practice not provided',
+          HttpStatus.UNAUTHORIZED,
+        );
+      }
+      if (!address) {
+        throw new HttpException(
+          'Address not provided',
+          HttpStatus.UNAUTHORIZED,
+        );
+      }
+
+      if (!files || !files.avatar || files.avatar.length === 0) {
+        throw new HttpException('Avatar not provided', HttpStatus.UNAUTHORIZED);
+      }
 
       const response = await this.authService.register({
         name: name,
         email: email,
         password: password,
+        credentials: credentials,
+        training_practice: training_practice,
+        address: address,
+        current_practice: data.current_practice,
+        bio: data.bio,
+        instagram: data.instagram,
+        linkedin: data.linkedin,
+        twitter_x: data.twitter_x,
+        facebook: data.facebook,
         type: type,
+        avatar: files.avatar[0],
+        verification_doc: files.verification_doc
+          ? files.verification_doc[0]
+          : null,
       });
 
       return response;

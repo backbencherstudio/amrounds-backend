@@ -7,7 +7,6 @@ import { Role } from '../../guard/role/role.enum';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 
-
 @Injectable()
 export class UserRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -143,13 +142,7 @@ export class UserRepository {
    * @param param0
    * @returns
    */
-  async attachRole({
-    user_id,
-    role_id,
-  }: {
-    user_id: string;
-    role_id: string;
-  }) {
+  async attachRole({ user_id, role_id }: { user_id: string; role_id: string }) {
     const role = await this.prisma.roleUser.create({
       data: {
         user_id: user_id,
@@ -164,13 +157,7 @@ export class UserRepository {
    * @param param0
    * @returns
    */
-  async syncRole({
-    user_id,
-    role_id,
-  }: {
-    user_id: string;
-    role_id: string;
-  }) {
+  async syncRole({ user_id, role_id }: { user_id: string; role_id: string }) {
     const role = await this.prisma.roleUser.updateMany({
       where: {
         AND: [
@@ -198,8 +185,19 @@ export class UserRepository {
     email,
     password,
     phone_number,
+    credentials,
+    training_practice,
+    address,
+    current_practice,
+    bio,
+    instagram,
+    linkedin,
+    twitter_x,
+    facebook,
     role_id = null,
     type = 'user',
+    avatar,
+    verifiy_document,
   }: {
     name?: string;
     first_name?: string;
@@ -207,8 +205,19 @@ export class UserRepository {
     email: string;
     password: string;
     phone_number?: string;
+    credentials?: string;
+    training_practice?: string;
+    address?: string;
+    current_practice?: string;
+    bio?: string;
+    instagram?: string;
+    linkedin?: string;
+    twitter_x?: string;
+    facebook?: string;
     role_id?: string;
     type?: string;
+    avatar?: string;
+    verifiy_document?: string;
   }) {
     try {
       const data = {};
@@ -223,6 +232,39 @@ export class UserRepository {
       }
       if (phone_number) {
         data['phone_number'] = phone_number;
+      }
+      if (credentials) {
+        data['credentials'] = credentials;
+      }
+      if (training_practice) {
+        data['training_practice'] = training_practice;
+      }
+      if (address) {
+        data['address'] = address;
+      }
+      if (current_practice) {
+        data['current_practice'] = current_practice;
+      }
+      if (bio) {
+        data['bio'] = bio;
+      }
+      if (instagram) {
+        data['instagram'] = instagram;
+      }
+      if (linkedin) {
+        data['linkedin'] = linkedin;
+      }
+      if (twitter_x) {
+        data['twitter_x'] = twitter_x;
+      }
+      if (facebook) {
+        data['facebook'] = facebook;
+      }
+      if (avatar) {
+        data['avatar'] = avatar;
+      }
+      if (verifiy_document) {
+        data['verifiy_document'] = verifiy_document;
       }
       if (email) {
         // Check if email already exist
