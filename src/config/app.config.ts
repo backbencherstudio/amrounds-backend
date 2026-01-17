@@ -90,6 +90,7 @@ export default () => ({
     attachment: '/attachment',
     question: '/question/',
     verification_doc: '/verification-docs',
+    cv: '/cv',
   },
 
   defaultUser: {
