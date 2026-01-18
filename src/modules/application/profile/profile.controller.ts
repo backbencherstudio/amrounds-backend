@@ -8,6 +8,8 @@ import {
   Put,
   UseInterceptors,
   UploadedFile,
+  Get,
+  UseGuards,
 } from '@nestjs/common';
 import { ProfileService } from './profile.service';
 import {
@@ -19,10 +21,17 @@ import {
 import { Request } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
+import { JwtAuthGuard } from 'src/modules/auth/guards/jwt-auth.guard';
 
+@UseGuards(JwtAuthGuard)
 @Controller('profile')
 export class ProfileController {
   constructor(private readonly profileService: ProfileService) {}
+
+  @Get()
+  getProfile(@Req() req: Request) {
+    return this.profileService.getProfile(req.user.userId);
+  }
 
   @Post('education')
   createEducation(

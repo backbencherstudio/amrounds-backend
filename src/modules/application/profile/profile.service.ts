@@ -1,4 +1,9 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import {
   CreateEducationDto,
   CreateExperienceDto,
@@ -12,6 +17,104 @@ import appConfig from 'src/config/app.config';
 @Injectable()
 export class ProfileService {
   constructor(private readonly prisma: PrismaService) {}
+
+  async getProfile(user_id: string) {
+    if (!user_id) {
+      throw new UnauthorizedException('User not found');
+    }
+    const user = await this.prisma.user.findUnique({
+      where: {
+        id: user_id,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        avatar: true,
+        credentials: true,
+        training_practice: true,
+        address: true,
+        current_practice: true,
+        bio: true,
+        instagram: true,
+        linkedin: true,
+        twitter_x: true,
+        facebook: true,
+        type: true,
+        cv: true,
+        is_public: true,
+        email_notification: true,
+        website_notification: true,
+        educations: {
+          select: {
+            id: true,
+            degree: true,
+            description: true,
+            institute: true,
+            year: true,
+          },
+          orderBy: {
+            year: 'desc',
+          },
+        },
+        experiences: {
+          select: {
+            id: true,
+            company: true,
+            position: true,
+            location: true,
+            start_date: true,
+            end_date: true,
+          },
+          orderBy: {
+            start_date: 'desc',
+          },
+        },
+        skills: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        publications: {
+          select: {
+            id: true,
+            topic: true,
+            link: true,
+            year: true,
+          },
+          orderBy: {
+            year: 'desc',
+          },
+        },
+        _count: {
+          select: {
+            followings: true,
+            followers: true,
+          },
+        },
+      },
+    });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const { _count, ...rest } = user;
+    return {
+      success: true,
+      message: 'Profile fetched successfully',
+      data: {
+        ...rest,
+        avatar: rest.avatar
+          ? `${appConfig().storageUrl.avatar}/${rest.avatar}`
+          : null,
+        cv: rest.cv ? `${appConfig().storageUrl.cv}/${rest.cv}` : null,
+        followings: _count.followings,
+        followers: _count.followers,
+      },
+    };
+  }
+
   async createEducation(
     user_id: string,
     createEducationDto: CreateEducationDto,
