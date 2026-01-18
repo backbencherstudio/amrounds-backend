@@ -68,14 +68,14 @@ export class ProfileController {
     );
   }
 
-  @Put('resume')
+  @Put('cv')
   @UseInterceptors(
     FileInterceptor('file', {
       storage: memoryStorage(),
     }),
   )
-  updateResume(@Req() req: Request, @UploadedFile() file: Express.Multer.File) {
-    return this.profileService.updateResume(req.user.userId, file);
+  updateCV(@Req() req: Request, @UploadedFile() file: Express.Multer.File) {
+    return this.profileService.updateCV(req.user.userId, file);
   }
 
   @Delete('education/:id')

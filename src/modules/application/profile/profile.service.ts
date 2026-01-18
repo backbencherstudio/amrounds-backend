@@ -205,7 +205,7 @@ export class ProfileService {
     };
   }
 
-  async updateResume(user_id: string, file: Express.Multer.File) {
+  async updateCV(user_id: string, file: Express.Multer.File) {
     const user = await this.prisma.user.findUnique({
       where: {
         id: user_id,
