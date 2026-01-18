@@ -70,6 +70,7 @@ model User {
   approved             Boolean? @default(false)
   email_notification   Boolean? @default(true)
   website_notification Boolean? @default(true)
+  is_public            Boolean? @default(true)
 
   phone_number  String?
   country       String?
@@ -95,8 +96,8 @@ model User {
   sender_messages           Message[]      @relation("sender")
   receiver_notifications    Notification[] @relation("receiver")
   sender_notifications      Notification[] @relation("sender")
-  following                 Follow[]       @relation("following")
-  follower                  Follow[]       @relation("follower")
+  followings                Follow[]       @relation("followings")
+  followers                 Follow[]       @relation("followers")
 
   user_payment_methods UserPaymentMethod[]
   user_settings        UserSetting[]
@@ -550,9 +551,9 @@ model Follow {
   deleted_at DateTime?
 
   following_id String
-  following    User   @relation("following", fields: [following_id], references: [id], onDelete: Cascade)
+  following    User   @relation("followings", fields: [following_id], references: [id], onDelete: Cascade)
   follower_id  String
-  follower     User   @relation("follower", fields: [follower_id], references: [id], onDelete: Cascade)
+  follower     User   @relation("followers", fields: [follower_id], references: [id], onDelete: Cascade)
 
   @@unique([following_id, follower_id])
   @@index([follower_id])
