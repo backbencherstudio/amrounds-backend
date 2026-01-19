@@ -6,8 +6,9 @@ import { TestModule } from './test/test.module';
 import { LeaderboardModule } from './leaderboard/leaderboard.module';
 import { SupportModule } from './support/support.module';
 import { SkillsModule } from './skills/skills.module';
+import { ProfileModule } from './profile/profile.module';
 
 @Module({
-  imports: [NotificationModule, ContactModule, FaqModule, TestModule, LeaderboardModule, SupportModule, SkillsModule],
+  imports: [NotificationModule, ContactModule, FaqModule, TestModule, LeaderboardModule, SupportModule, SkillsModule, ProfileModule],
 })
 export class ApplicationModule {}
