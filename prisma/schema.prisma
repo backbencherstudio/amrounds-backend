@@ -66,9 +66,11 @@ model User {
   twitter_x            String?
   facebook             String?
   verifiy_document     String?
+  cv                   String?
   approved             Boolean? @default(false)
   email_notification   Boolean? @default(true)
   website_notification Boolean? @default(true)
+  is_public            Boolean? @default(true)
 
   phone_number  String?
   country       String?
@@ -94,6 +96,8 @@ model User {
   sender_messages           Message[]      @relation("sender")
   receiver_notifications    Notification[] @relation("receiver")
   sender_notifications      Notification[] @relation("sender")
+  followings                Follow[]       @relation("followings")
+  followers                 Follow[]       @relation("followers")
 
   user_payment_methods UserPaymentMethod[]
   user_settings        UserSetting[]
@@ -539,6 +543,25 @@ model Support {
 //   @@map("posts")
 // }
 
+// --------------- Follow model-------------------
+model Follow {
+  id         String    @id @default(cuid())
+  created_at DateTime  @default(now())
+  updated_at DateTime  @default(now())
+  deleted_at DateTime?
+
+  following_id String
+  following    User   @relation("followings", fields: [following_id], references: [id], onDelete: Cascade)
+  follower_id  String
+  follower     User   @relation("followers", fields: [follower_id], references: [id], onDelete: Cascade)
+
+  @@unique([following_id, follower_id])
+  @@index([follower_id])
+  @@index([following_id])
+  @@index([follower_id, following_id])
+  @@map("follows")
+}
+
 // ---------------Education model-------------------
 model Education {
   id         String    @id @default(cuid())
@@ -546,14 +569,15 @@ model Education {
   updated_at DateTime  @default(now())
   deleted_at DateTime?
 
-  user_id String?
-  user    User?   @relation(fields: [user_id], references: [id])
+  user_id String
+  user    User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   degree      String?
   description String?
   institute   String?
   year        String?
 
+  @@index([user_id])
   @@map("educations")
 }
 
@@ -564,8 +588,8 @@ model Experience {
   updated_at DateTime  @default(now())
   deleted_at DateTime?
 
-  user_id String?
-  user    User?   @relation(fields: [user_id], references: [id])
+  user_id String
+  user    User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   company    String?
   position   String?
@@ -573,6 +597,7 @@ model Experience {
   start_date String?
   end_date   String?
 
+  @@index([user_id])
   @@map("experiences")
 }
 
@@ -583,11 +608,12 @@ model Skill {
   updated_at DateTime  @default(now())
   deleted_at DateTime?
 
-  user_id String?
-  user    User?   @relation(fields: [user_id], references: [id])
+  user_id String
+  user    User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   name String?
 
+  @@index([user_id])
   @@map("skills")
 }
 
@@ -598,13 +624,14 @@ model Publication {
   updated_at DateTime  @default(now())
   deleted_at DateTime?
 
-  user_id String?
-  user    User?   @relation(fields: [user_id], references: [id])
+  user_id String
+  user    User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   title String?
   topic String?
   link  String?
   year  String?
 
+  @@index([user_id])
   @@map("publications")
 }

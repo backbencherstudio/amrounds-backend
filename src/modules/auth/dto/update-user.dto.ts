@@ -65,4 +65,25 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
     example: '14/11/2001',
   })
   date_of_birth?: string;
+
+  @IsOptional()
+  @ApiProperty({
+    description: 'New password',
+    example: '123456',
+  })
+  new_password?: string;
+
+  @IsOptional()
+  @ApiProperty({
+    description: 'Email notification',
+    example: true,
+  })
+  email_notification?: boolean;
+
+  @IsOptional()
+  @ApiProperty({
+    description: 'Website notification',
+    example: true,
+  })
+  website_notification?: boolean;
 }
