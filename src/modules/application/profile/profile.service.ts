@@ -13,10 +13,216 @@ import {
 import { PrismaService } from 'src/prisma/prisma.service';
 import { SojebStorage } from 'src/common/lib/Disk/SojebStorage';
 import appConfig from 'src/config/app.config';
+import { DiscoverProfileQueryDTO } from './dto/query-profile.dto';
+import { Prisma } from 'prisma/generated/client';
 
 @Injectable()
 export class ProfileService {
   constructor(private readonly prisma: PrismaService) {}
+
+  async discoverProfile(user_id: string, query: DiscoverProfileQueryDTO) {
+    const { search = '', page = 1, limit = 10 } = query;
+    const offset = (page - 1) * limit;
+
+    // 1. Fetch current user data for suggestion matching
+    const currentUser = await this.prisma.user.findUnique({
+      where: { id: user_id },
+      include: {
+        educations: true,
+        experiences: true,
+        skills: true,
+        publications: true,
+      },
+    });
+
+    if (!currentUser) {
+      throw new NotFoundException('Current user not found');
+    }
+
+    // Prepare arrays for matching (Lowercased for loose matching)
+    // We join them with a delimiter to pass as a single string and unnest in SQL for fuzzy matching
+    const delimiter = '<->';
+    const joinForSql = (arr: string[]) => arr.join(delimiter);
+
+    const skillNames = currentUser.skills
+      .map((s) => s.name?.toLowerCase())
+      .filter(Boolean);
+    const institutes = currentUser.educations
+      .map((e) => e.institute?.toLowerCase())
+      .filter(Boolean);
+    const degrees = currentUser.educations
+      .map((e) => e.degree?.toLowerCase())
+      .filter(Boolean);
+    const companies = currentUser.experiences
+      .map((e) => e.company?.toLowerCase())
+      .filter(Boolean);
+    const positions = currentUser.experiences
+      .map((e) => e.position?.toLowerCase())
+      .filter(Boolean);
+    const topics = currentUser.publications
+      .map((p) => p.topic?.toLowerCase())
+      .filter(Boolean);
+
+    // Helpers to safely join strings for SQL IN clauses or similar logic
+    // Since we are using raw query, we must be careful with arrays.
+    // For simplicity in raw SQL with array matching, we can use specific SQL constructions
+    // but Prisma $queryRaw supports parameter substitution which is safer.
+
+    // 2. Enable pg_trgm extension if not exists (Best effort)
+    try {
+      await this.prisma.$executeRawUnsafe(
+        `CREATE EXTENSION IF NOT EXISTS pg_trgm;`,
+      );
+    } catch (e) {
+      // Ignore permission errors if already enabled or not allowed
+    }
+
+    // 3. Build the Query
+    // We will select users and calculate scores.
+    // Note: Parameterized query is complex with dynamic arrays.
+    // We'll use a mix of raw text matching and exact matches.
+
+    // Base similarity for search
+    // We'll default search to empty string if not provided to avoid null issues in similarity
+    const searchTerm = search || '';
+
+    // Calculate Suggestion Score Logic in SQL:
+    // We'll add points for matching fields.
+    // Explicitly casting to text to ensure type safety in raw query
+
+    // Constructing the array parts of the query is tricky with template literals and arrays.
+    // We will do precise values checks.
+
+    const users: any[] = await this.prisma.$queryRaw`
+      SELECT 
+        u.id, 
+        u.name, 
+        u.username, 
+        u.avatar, 
+        u.bio, 
+        u.training_practice, 
+        u.current_practice,
+        -- Calculate Suggestion Rank
+        (
+          (COALESCE(similarity(LOWER(u.training_practice), ${(currentUser.training_practice || '').toLowerCase()}), 0) * 5) +
+          (COALESCE(similarity(LOWER(u.current_practice), ${(currentUser.current_practice || '').toLowerCase()}), 0) * 5) +
+          
+          -- Overlap in Skills (Fuzzy Match)
+          (
+            SELECT COUNT(*) FROM skills s 
+            WHERE s.user_id = u.id 
+            AND ${
+              skillNames.length > 0
+                ? Prisma.sql`EXISTS (
+                    SELECT 1 FROM unnest(string_to_array(${joinForSql(skillNames)}, ${delimiter})) as k 
+                    WHERE similarity(LOWER(s.name), k) > 0.4
+                  )`
+                : Prisma.sql`FALSE`
+            }
+          ) * 3 +
+          
+          -- Overlap in Education (Fuzzy Match)
+          (
+            SELECT COUNT(*) FROM educations e 
+            WHERE e.user_id = u.id 
+            AND (
+              ${
+                institutes.length > 0
+                  ? Prisma.sql`EXISTS (
+                      SELECT 1 FROM unnest(string_to_array(${joinForSql(institutes)}, ${delimiter})) as k 
+                      WHERE similarity(LOWER(e.institute), k) > 0.4
+                    )`
+                  : Prisma.sql`FALSE`
+              }
+              OR 
+              ${
+                degrees.length > 0
+                  ? Prisma.sql`EXISTS (
+                      SELECT 1 FROM unnest(string_to_array(${joinForSql(degrees)}, ${delimiter})) as k 
+                      WHERE similarity(LOWER(e.degree), k) > 0.4
+                    )`
+                  : Prisma.sql`FALSE`
+              }
+            )
+          ) * 2 +
+          
+          -- Overlap in Experience (Fuzzy Match)
+          (
+            SELECT COUNT(*) FROM experiences ex 
+            WHERE ex.user_id = u.id 
+            AND (
+              ${
+                companies.length > 0
+                  ? Prisma.sql`EXISTS (
+                      SELECT 1 FROM unnest(string_to_array(${joinForSql(companies)}, ${delimiter})) as k 
+                      WHERE similarity(LOWER(ex.company), k) > 0.4
+                    )`
+                  : Prisma.sql`FALSE`
+              }
+              OR 
+              ${
+                positions.length > 0
+                  ? Prisma.sql`EXISTS (
+                      SELECT 1 FROM unnest(string_to_array(${joinForSql(positions)}, ${delimiter})) as k 
+                      WHERE similarity(LOWER(ex.position), k) > 0.4
+                    )`
+                  : Prisma.sql`FALSE`
+              }
+            )
+          ) * 2 +
+
+          -- Overlap in Publications (Fuzzy Match)
+          (
+            SELECT COUNT(*) FROM publications p 
+            WHERE p.user_id = u.id 
+            AND ${
+              topics.length > 0
+                ? Prisma.sql`EXISTS (
+                    SELECT 1 FROM unnest(string_to_array(${joinForSql(topics)}, ${delimiter})) as k 
+                    WHERE similarity(LOWER(p.topic), k) > 0.4
+                  )`
+                : Prisma.sql`FALSE`
+            }
+          ) * 2
+        ) as suggestion_rank,
+
+        -- Calculate Search Rank (only if search term is provided, else 0)
+        ${
+          searchTerm
+            ? Prisma.sql`(similarity(u.name, ${searchTerm}) + similarity(u.username, ${searchTerm}) + similarity(u.bio, ${searchTerm}))`
+            : Prisma.sql`0`
+        } as search_rank
+
+      FROM users u
+      WHERE u.id != ${user_id} 
+      AND u.status = 1
+      ${
+        searchTerm
+          ? Prisma.sql`AND (
+            u.name ILIKE ${'%' + searchTerm + '%'} 
+            OR u.username ILIKE ${'%' + searchTerm + '%'}
+            OR u.bio ILIKE ${'%' + searchTerm + '%'}
+          )`
+          : Prisma.sql``
+      }
+      ORDER BY 
+        ${searchTerm ? Prisma.sql`search_rank DESC,` : Prisma.sql``}
+        suggestion_rank DESC
+      LIMIT ${limit}
+      OFFSET ${offset}
+    `;
+
+    // Count total for pagination meta (simplified, maybe separate query)
+    // For now, return list
+    return {
+      success: true,
+      data: users,
+      meta: {
+        page: Number(page),
+        limit: Number(limit),
+      },
+    };
+  }
 
   async getProfile(user_id: string) {
     if (!user_id) {
