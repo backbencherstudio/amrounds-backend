@@ -194,7 +194,8 @@ export class ProfileService {
         } as search_rank
 
       FROM users u
-      WHERE u.id != ${user_id} 
+      WHERE u.id != ${user_id}
+      AND u.is_public = true 
       AND u.status = 1
       ${
         searchTerm
