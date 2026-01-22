@@ -194,11 +194,16 @@ export class ProfileService {
         } as search_rank
 
       FROM users u
+<<<<<<< HEAD
       WHERE u.id != ${user_id}
       AND u.is_public = true 
       AND u.status = 1
       AND u.type != 'admin'
       AND NOT (u.approved = false AND u.approved_at IS NULL)
+=======
+      WHERE u.id != ${user_id} 
+      AND u.status = 1
+>>>>>>> 521c82a (feat: Introduce profile module with discovery, retrieval, and education management functionalities.)
       ${
         searchTerm
           ? Prisma.sql`AND (
