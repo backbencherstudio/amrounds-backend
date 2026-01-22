@@ -208,6 +208,8 @@ export class ProfileService {
       AND u.is_public = true 
 >>>>>>> 40d60e7 (feat: implement profile management and discovery service with fuzzy matching for profile suggestions.)
       AND u.status = 1
+      AND u.type != 'admin'
+      AND NOT (u.approved = false AND u.approved_at IS NULL)
 >>>>>>> 521c82a (feat: Introduce profile module with discovery, retrieval, and education management functionalities.)
       ${
         searchTerm
