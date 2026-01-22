@@ -196,6 +196,8 @@ export class ProfileService {
       FROM users u
       WHERE u.id != ${user_id} 
       AND u.status = 1
+      AND u.type != 'admin'
+      AND NOT (u.approved = false AND u.approved_at IS NULL)
       ${
         searchTerm
           ? Prisma.sql`AND (
