@@ -10,6 +10,7 @@ import {
   UploadedFile,
   Get,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { ProfileService } from './profile.service';
 import {
@@ -22,6 +23,7 @@ import { Request } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { JwtAuthGuard } from 'src/modules/auth/guards/jwt-auth.guard';
+import { DiscoverProfileQueryDTO } from './dto/query-profile.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('profile')
@@ -31,6 +33,14 @@ export class ProfileController {
   @Get()
   getProfile(@Req() req: Request) {
     return this.profileService.getProfile(req.user.userId);
+  }
+
+  @Get('discover')
+  discoverProfile(
+    @Query() query: DiscoverProfileQueryDTO,
+    @Req() req: Request,
+  ) {
+    return this.profileService.discoverProfile(req.user.userId, query);
   }
 
   @Post('education')
