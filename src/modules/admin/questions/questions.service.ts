@@ -29,7 +29,7 @@ export class QuestionsService {
       });
 
       while (isQuestionIdExist) {
-        questionId = `Q-${StringHelper.randomNumber(8)}`;
+        questionId = `Q-${StringHelper.randomNumber(7)}`;
         isQuestionIdExist = await this.prisma.questions.findFirst({
           where: { question_id: questionId },
         });
@@ -201,16 +201,40 @@ export class QuestionsService {
         },
       });
 
+      if (question && question.explanation) {
+        question.explanation = question.explanation.replace(
+          /\\(?=")|\\(?=\/)/g,
+          '',
+        );
+      }
+
       let explanation_image_url = null;
       if (question && question.explanation_image) {
-        explanation_image_url = SojebStorage.url(
-          appConfig().storageUrl.question + question.explanation_image,
-        );
+        if (question.explanation_image.startsWith('http')) {
+          explanation_image_url = question.explanation_image;
+        } else {
+          explanation_image_url = SojebStorage.url(
+            appConfig().storageUrl.question + question.explanation_image,
+          );
+        }
 
         if (question.explanation) {
+          const escapedFileName = question.explanation_image.replace(
+            /[.*+?^${}()|[\]\\]/g,
+            '\\$&',
+          );
+          const regex = new RegExp(
+            `(src=['"])([^'"]*${escapedFileName})(['"])`,
+            'g',
+          );
           question.explanation = question.explanation.replace(
-            question.explanation_image,
-            explanation_image_url,
+            regex,
+            (match, p1, p2, p3) => {
+              if (p2.startsWith('http')) {
+                return match;
+              }
+              return `${p1}${explanation_image_url}${p3}`;
+            },
           );
         }
       }
@@ -280,9 +304,39 @@ export class QuestionsService {
         data.topic = topic;
       }
       if (answerOptions) {
+        const existingOptions = await this.prisma.answerOptions.findMany({
+          where: { question_id: id },
+          select: { id: true },
+        });
+
+        const existingIds = existingOptions.map((o) => o.id);
+        const incomingIds = answerOptions
+          .filter((o) => o.id)
+          .map((o) => o.id as string);
+
+        const idsToDelete = existingIds.filter(
+          (id) => !incomingIds.includes(id),
+        );
+        const optionsToCreate = answerOptions.filter((o) => !o.id);
+        const optionsToUpdate = answerOptions.filter(
+          (o) => o.id && existingIds.includes(o.id),
+        );
+
         data.answerOptions = {
-          deleteMany: {},
-          create: answerOptions,
+          deleteMany: {
+            id: { in: idsToDelete },
+          },
+          create: optionsToCreate.map((o) => ({
+            option_text: o.option_text,
+            is_correct: o.is_correct,
+          })),
+          update: optionsToUpdate.map((o) => ({
+            where: { id: o.id! },
+            data: {
+              option_text: o.option_text,
+              is_correct: o.is_correct,
+            },
+          })),
         };
       }
 
