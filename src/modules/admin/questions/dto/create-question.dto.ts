@@ -37,6 +37,10 @@ export class CreateAnswerOptionDto {
   @IsBoolean()
   @IsOptional()
   is_correct?: boolean;
+
+  @IsString()
+  @IsOptional()
+  id?: string;
 }
 
 export class CreateAnswerOptionsDto {
@@ -101,7 +105,7 @@ export class CreateQuestionDto {
       try {
         return JSON.parse(value);
       } catch (e) {
-        return [];
+        return value;
       }
     }
     return value;
