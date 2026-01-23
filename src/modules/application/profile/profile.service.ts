@@ -13,8 +13,8 @@ import {
 import { PrismaService } from 'src/prisma/prisma.service';
 import { SojebStorage } from 'src/common/lib/Disk/SojebStorage';
 import appConfig from 'src/config/app.config';
-import { DiscoverProfileQueryDTO } from './dto/query-profile.dto';
 import { Prisma } from 'prisma/generated/client';
+import { DiscoverProfileQueryDTO } from './dto/query-profile.dto';
 
 @Injectable()
 export class ProfileService {
@@ -194,23 +194,11 @@ export class ProfileService {
         } as search_rank
 
       FROM users u
-<<<<<<< HEAD
-<<<<<<< HEAD
       WHERE u.id != ${user_id}
       AND u.is_public = true 
       AND u.status = 1
       AND u.type != 'admin'
       AND NOT (u.approved = false AND u.approved_at IS NULL)
-=======
-      WHERE u.id != ${user_id} 
-=======
-      WHERE u.id != ${user_id}
-      AND u.is_public = true 
->>>>>>> 40d60e7 (feat: implement profile management and discovery service with fuzzy matching for profile suggestions.)
-      AND u.status = 1
-      AND u.type != 'admin'
-      AND NOT (u.approved = false AND u.approved_at IS NULL)
->>>>>>> 521c82a (feat: Introduce profile module with discovery, retrieval, and education management functionalities.)
       ${
         searchTerm
           ? Prisma.sql`AND (
