@@ -11,6 +11,7 @@ import {
   UseInterceptors,
   UploadedFile,
   BadRequestException,
+  Query,
 } from '@nestjs/common';
 import { QuestionsService } from './questions.service';
 import { CreateQuestionDto } from './dto/create-question.dto';
@@ -63,8 +64,16 @@ export class QuestionsController {
   }
 
   @Get()
-  findAllQuestions() {
-    return this.questionsService.findAllQuestions();
+  findAllQuestions(
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+    @Query('search') search?: string,
+  ) {
+    return this.questionsService.findAllQuestions({
+      page: Number(page),
+      limit: Number(limit),
+      search,
+    });
   }
 
   @Get(':id')
@@ -73,15 +82,37 @@ export class QuestionsController {
   }
 
   @Patch(':id')
-  update(
+  @UseInterceptors(
+    FileInterceptor('explanation_image', {
+      storage: memoryStorage(),
+      limits: {
+        fileSize: 10 * 1024 * 1024,
+      },
+      fileFilter: (req, file, cb) => {
+        if (!file.mimetype.match(/\/(jpg|jpeg|png|gif)$/)) {
+          return cb(
+            new BadRequestException('Only image files are allowed!'),
+            false,
+          );
+        }
+        cb(null, true);
+      },
+    }),
+  )
+  updateOneQuestion(
     @Param('id') id: string,
     @Body() updateQuestionDto: UpdateQuestionDto,
+    @UploadedFile() explanation_image: Express.Multer.File,
   ) {
-    return this.questionsService.update(id, updateQuestionDto);
+    return this.questionsService.updateOneQuestion(
+      id,
+      updateQuestionDto,
+      explanation_image,
+    );
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.questionsService.remove(id);
+  deleteOneQuestion(@Param('id') id: string) {
+    return this.questionsService.deleteOneQuestion(id);
   }
 }
