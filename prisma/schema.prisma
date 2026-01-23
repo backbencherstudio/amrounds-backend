@@ -111,6 +111,8 @@ model User {
   experiences          Experience[]
   skills               Skill[]
   publications         Publication[]
+  userAnswers          UserAnswer[]
+  tests                Test[]
 
   @@map("users")
 }
@@ -493,19 +495,21 @@ model Questions {
   difficulty    difficulty?
   topic         topic[]
   answerOptions AnswerOptions[]
+  userAnswers   UserAnswer[]
 
   @@map("questions")
 }
 
 model AnswerOptions {
-  id          String     @id @default(cuid())
-  created_at  DateTime   @default(now())
-  updated_at  DateTime   @default(now())
+  id          String       @id @default(cuid())
+  created_at  DateTime     @default(now())
+  updated_at  DateTime     @default(now())
   deleted_at  DateTime?
   option_text String?
-  is_correct  Boolean?   @default(false)
+  is_correct  Boolean?     @default(false)
   question_id String?
-  question    Questions? @relation(fields: [question_id], references: [id])
+  question    Questions?   @relation(fields: [question_id], references: [id])
+  userAnswers UserAnswer[]
 
   @@map("answer_options")
 }
@@ -634,4 +638,51 @@ model Publication {
 
   @@index([user_id])
   @@map("publications")
+}
+
+model Test {
+  id         String   @id @default(cuid())
+  created_at DateTime @default(now())
+
+  user_id String
+  user    User   @relation(fields: [user_id], references: [id])
+
+  // Test settings
+  total_questions Int
+  score           Float? // end the test hole score here
+  is_completed    Boolean @default(false)
+
+  // Relationships
+  user_answers UserAnswer[]
+
+  @@map("tests")
+}
+
+model UserAnswer {
+  id         String   @id @default(cuid())
+  created_at DateTime @default(now())
+
+  test_id String
+  test    Test   @relation(fields: [test_id], references: [id])
+
+  user_id String
+  user    User   @relation(fields: [user_id], references: [id])
+
+  question_id String
+  question    Questions @relation(fields: [question_id], references: [id])
+
+  // select answer option
+  selected_option_id String?
+  selected_option    AnswerOptions? @relation(fields: [selected_option_id], references: [id])
+
+  // is marked as important
+  is_marked Boolean @default(false)
+
+  // is omitted
+  is_omitted Boolean @default(false)
+
+  //  is correct answer
+  is_correct Boolean
+
+  @@map("user_answers")
 }

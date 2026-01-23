@@ -13,8 +13,8 @@ import {
 import { PrismaService } from 'src/prisma/prisma.service';
 import { SojebStorage } from 'src/common/lib/Disk/SojebStorage';
 import appConfig from 'src/config/app.config';
-import { DiscoverProfileQueryDTO } from './dto/query-profile.dto';
 import { Prisma } from 'prisma/generated/client';
+import { DiscoverProfileQueryDTO } from './dto/query-profile.dto';
 
 @Injectable()
 export class ProfileService {
