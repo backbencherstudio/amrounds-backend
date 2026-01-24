@@ -43,6 +43,11 @@ export class ProfileController {
     return this.profileService.discoverProfile(req.user.userId, query);
   }
 
+  @Put('follow-toggle/:target_id')
+  followToggle(@Req() req: Request, @Param('target_id') target_id: string) {
+    return this.profileService.followToggle(req.user.userId, target_id);
+  }
+
   @Post('education')
   createEducation(
     @Body() createEducationDto: CreateEducationDto,
