@@ -44,9 +44,20 @@ export class CreateTestDto {
   @IsNotEmpty()
   total_questions: number;
 
-  @IsEnum(TestMode)
-  @IsNotEmpty()
-  test_mode: TestMode;
+  @IsArray()
+  @IsEnum(TestMode, { each: true })
+  // @IsNotEmpty()
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      try {
+        return JSON.parse(value);
+      } catch (e) {
+        return value.split(',').map((item) => item.trim());
+      }
+    }
+    return value;
+  })
+  test_mode: TestMode[];
 
   @IsEnum(difficulty)
   @IsNotEmpty()

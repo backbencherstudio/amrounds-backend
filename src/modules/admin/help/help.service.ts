@@ -27,7 +27,6 @@ export class HelpService {
         return {
           success: true,
           message: 'Help and support updated successfully',
-          data: updatedSupport,
         };
       } else {
         // If support doesn't exist, create it
