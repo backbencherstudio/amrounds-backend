@@ -496,6 +496,7 @@ model Questions {
   topic         topic[]
   answerOptions AnswerOptions[]
   userAnswers   UserAnswer[]
+  tests         Test[]
 
   @@map("questions")
 }
@@ -647,13 +648,18 @@ model Test {
   user_id String
   user    User   @relation(fields: [user_id], references: [id])
 
+  test_mode       String
+  difficulty      difficulty
+  topic           topic[]
   // Test settings
+  total_attempts  Int        @default(0)
   total_questions Int
   score           Float? // end the test hole score here
-  is_completed    Boolean @default(false)
+  is_completed    Boolean    @default(false)
 
   // Relationships
   user_answers UserAnswer[]
+  questions    Questions[]
 
   @@map("tests")
 }
