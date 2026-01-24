@@ -8,6 +8,7 @@ import {
   Delete,
   Req,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { TestService } from './test.service';
 import { CreateTestDto } from './dto/create-test.dto';
@@ -19,6 +20,8 @@ import { RolesGuard } from 'src/common/guard/role/roles.guard';
 import { Roles } from 'src/common/guard/role/roles.decorator';
 import { Role } from 'src/common/guard/role/role.enum';
 import { AnswerTestDto } from './dto/answer-test.dto';
+import { MarkQuestionDto } from './dto/mark-question.dto';
+import { SkipQuestionDto } from './dto/skip-question.dto';
 
 @ApiBearerAuth()
 @ApiTags('Test')
@@ -38,5 +41,29 @@ export class TestController {
   answerTest(@Req() req: Request, @Body() answerTestDto: AnswerTestDto) {
     const user_id = req.user.userId;
     return this.testService.answerTest(user_id, answerTestDto);
+  }
+
+  @Post('mark-toggle')
+  markQuestion(@Req() req: Request, @Body() markQuestionDto: MarkQuestionDto) {
+    const user_id = req.user.userId;
+    return this.testService.markQuestion(user_id, markQuestionDto);
+  }
+
+  @Post('skip')
+  skipQuestion(@Req() req: Request, @Body() skipQuestionDto: SkipQuestionDto) {
+    const user_id = req.user.userId;
+    return this.testService.skipQuestion(user_id, skipQuestionDto);
+  }
+
+  @Patch('complete')
+  completeTest(@Req() req: Request, @Query('test_id') test_id: string) {
+    const user_id = req.user.userId;
+    return this.testService.completeTest(user_id, test_id);
+  }
+
+  @Get('result')
+  getTestResult(@Req() req: Request, @Query('test_id') test_id: string) {
+    const user_id = req.user.userId;
+    return this.testService.getTestResult(user_id, test_id);
   }
 }
