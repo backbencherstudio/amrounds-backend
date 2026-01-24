@@ -324,6 +324,38 @@ export class ProfileService {
     };
   }
 
+  async followToggle(user_id: string, target_id: string) {
+    const follow = await this.prisma.follow.findUnique({
+      where: {
+        following_id_follower_id: {
+          follower_id: user_id,
+          following_id: target_id,
+        },
+      },
+    });
+    if (follow) {
+      await this.prisma.follow.delete({
+        where: {
+          id: follow.id,
+        },
+      });
+      return {
+        success: true,
+        message: 'Unfollowed successfully',
+      };
+    }
+    await this.prisma.follow.create({
+      data: {
+        follower_id: user_id,
+        following_id: target_id,
+      },
+    });
+    return {
+      success: true,
+      message: 'Followed successfully',
+    };
+  }
+
   async createEducation(
     user_id: string,
     createEducationDto: CreateEducationDto,
