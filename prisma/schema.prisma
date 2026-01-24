@@ -648,7 +648,7 @@ model Test {
   user_id String
   user    User   @relation(fields: [user_id], references: [id])
 
-  test_mode       String
+  test_mode       String[]
   difficulty      difficulty
   topic           topic[]
   // Test settings
@@ -688,7 +688,7 @@ model UserAnswer {
   is_omitted Boolean @default(false)
 
   //  is correct answer
-  is_correct Boolean
+  is_correct Boolean?
 
   @@map("user_answers")
 }
