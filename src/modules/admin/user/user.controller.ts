@@ -17,6 +17,7 @@ import { Role } from '../../../common/guard/role/role.enum';
 import { Roles } from '../../../common/guard/role/roles.decorator';
 import { RolesGuard } from '../../../common/guard/role/roles.guard';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { GetAllUserDto } from './dto/query-user.dto';
 
 @ApiBearerAuth()
 @ApiTags('User')
@@ -42,22 +43,9 @@ export class UserController {
 
   @ApiResponse({ description: 'Get all users' })
   @Get()
-  async findAll(
-    @Query() query: { q?: string; type?: string; approved?: string },
-  ) {
-    try {
-      const q = query.q;
-      const type = query.type;
-      const approved = query.approved;
-
-      const users = await this.userService.findAll({ q, type, approved });
-      return users;
-    } catch (error) {
-      return {
-        success: false,
-        message: error.message,
-      };
-    }
+  async findAll(@Query() query: GetAllUserDto) {
+    const users = await this.userService.findAll(query);
+    return users;
   }
 
   // approve user
