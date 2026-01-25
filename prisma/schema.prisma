@@ -114,7 +114,6 @@ model User {
   publications         Publication[]
   userAnswers          UserAnswer[]
   tests                Test[]
-  activities           Activity[]
 
   @@map("users")
 }
@@ -650,16 +649,9 @@ model Activity {
   updated_at DateTime  @default(now())
   deleted_at DateTime?
 
-  user_id String?
-  user    User?   @relation(fields: [user_id], references: [id], onDelete: Cascade)
-
   title       String?
   description String?
 
-  entity_id   String?
-  entity_type String?
-
-  @@index([user_id])
   @@map("activities")
 }
 
