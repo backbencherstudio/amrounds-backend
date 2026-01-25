@@ -27,6 +27,16 @@ export class AuthService {
     @InjectRedis() private readonly redis: Redis,
   ) {}
 
+  async createActivity(activityDto: { title?: string; description?: string }) {
+    try {
+      await this.prisma.activity.create({
+        data: activityDto,
+      });
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
   async me(userId: string) {
     try {
       const user = await this.prisma.user.findFirst({
@@ -469,6 +479,10 @@ export class AuthService {
       });
 
       if (user == null && user.success == false) {
+        await this.createActivity({
+          title: 'User registration failed',
+          description: `User ${name} registration failed`,
+        });
         return {
           success: false,
           message: 'Failed to create account',
@@ -528,11 +542,20 @@ export class AuthService {
         type: type,
       });
 
+      await this.createActivity({
+        title: 'User registered',
+        description: `User ${name} registered`,
+      });
+
       return {
         success: true,
         message: 'We have sent a verification link to your email',
       };
     } catch (error) {
+      await this.createActivity({
+        title: 'User registration failed',
+        description: `User ${name} registration failed`,
+      });
       return {
         success: false,
         message: error.message,
