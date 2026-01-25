@@ -68,6 +68,7 @@ model User {
   verifiy_document     String?
   cv                   String?
   approved             Boolean? @default(false)
+  rejected             Boolean? @default(false)
   email_notification   Boolean? @default(true)
   website_notification Boolean? @default(true)
   is_public            Boolean? @default(true)
@@ -113,6 +114,7 @@ model User {
   publications         Publication[]
   userAnswers          UserAnswer[]
   tests                Test[]
+  activities           Activity[]
 
   @@map("users")
 }
@@ -639,6 +641,26 @@ model Publication {
 
   @@index([user_id])
   @@map("publications")
+}
+
+// --------------- Activity model -------------------
+model Activity {
+  id         String    @id @default(cuid())
+  created_at DateTime  @default(now())
+  updated_at DateTime  @default(now())
+  deleted_at DateTime?
+
+  user_id String?
+  user    User?   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  title       String?
+  description String?
+
+  entity_id   String?
+  entity_type String?
+
+  @@index([user_id])
+  @@map("activities")
 }
 
 model Test {
