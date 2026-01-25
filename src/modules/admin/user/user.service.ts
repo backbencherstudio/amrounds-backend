@@ -150,8 +150,9 @@ export class UserService {
   }
 
   async approve(id: string) {
+    let user;
     try {
-      const user = await this.prisma.user.findUnique({
+      user = await this.prisma.user.findUnique({
         where: { id: id },
       });
       if (!user) {
@@ -168,21 +169,27 @@ export class UserService {
           rejected: false,
         },
       });
+      await this.createActivity({
+        title: 'User approved',
+        description: `User ${user.name} has been approved`,
+      });
       return {
         success: true,
         message: 'User approved successfully',
       };
     } catch (error) {
-      return {
-        success: false,
-        message: error.message,
-      };
+      await this.createActivity({
+        title: 'User approve failed',
+        description: `User ${user.name} approve failed`,
+      });
+      throw error;
     }
   }
 
   async reject(id: string) {
+    let user;
     try {
-      const user = await this.prisma.user.findUnique({
+      user = await this.prisma.user.findUnique({
         where: { id: id },
       });
       if (!user) {
@@ -199,15 +206,20 @@ export class UserService {
           rejected: true,
         },
       });
+      await this.createActivity({
+        title: 'User rejected',
+        description: `User ${user.name} has been rejected`,
+      });
       return {
         success: true,
         message: 'User rejected successfully',
       };
     } catch (error) {
-      return {
-        success: false,
-        message: error.message,
-      };
+      await this.createActivity({
+        title: 'User reject failed',
+        description: `User ${user.name} reject failed`,
+      });
+      throw error;
     }
   }
 
@@ -243,6 +255,16 @@ export class UserService {
         success: false,
         message: error.message,
       };
+    }
+  }
+
+  async createActivity(activityDto: { title?: string; description?: string }) {
+    try {
+      await this.prisma.activity.create({
+        data: activityDto,
+      });
+    } catch (error) {
+      console.log(error);
     }
   }
 }
