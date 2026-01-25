@@ -6,6 +6,7 @@ import { UserRepository } from '../../../common/repository/user/user.repository'
 import appConfig from '../../../config/app.config';
 import { SojebStorage } from '../../../common/lib/Disk/SojebStorage';
 import { DateHelper } from '../../../common/helper/date.helper';
+import { GetAllUserDto } from './dto/query-user.dto';
 
 @Injectable()
 export class UserService {
@@ -37,31 +38,36 @@ export class UserService {
     }
   }
 
-  async findAll({
-    q,
-    type,
-    approved,
-  }: {
-    q?: string;
-    type?: string;
-    approved?: string;
-  }) {
+  async findAll(query: GetAllUserDto) {
     try {
       const where_condition = {};
-      if (q) {
+      if (query.search) {
         where_condition['OR'] = [
-          { name: { contains: q, mode: 'insensitive' } },
-          { email: { contains: q, mode: 'insensitive' } },
+          { name: { contains: query.search, mode: 'insensitive' } },
+          { email: { contains: query.search, mode: 'insensitive' } },
         ];
       }
 
-      if (type) {
-        where_condition['type'] = type;
+      if (query.type) {
+        where_condition['type'] = query.type;
       }
 
-      if (approved) {
-        where_condition['approved_at'] =
-          approved == 'approved' ? { not: null } : { equals: null };
+      if (query.status == 'pending') {
+        where_condition['approved_at'] = null;
+        where_condition['approved'] = false;
+        where_condition['rejected'] = false;
+      }
+
+      if (query.status == 'approved') {
+        where_condition['approved_at'] = { not: null };
+        where_condition['approved'] = true;
+        where_condition['rejected'] = false;
+      }
+
+      if (query.status == 'rejected') {
+        where_condition['approved_at'] = null;
+        where_condition['approved'] = false;
+        where_condition['rejected'] = true;
       }
 
       const users = await this.prisma.user.findMany({
@@ -76,6 +82,8 @@ export class UserService {
           address: true,
           type: true,
           approved_at: true,
+          approved: true,
+          rejected: true,
           created_at: true,
           updated_at: true,
         },
@@ -106,6 +114,8 @@ export class UserService {
           type: true,
           phone_number: true,
           approved_at: true,
+          approved: true,
+          rejected: true,
           created_at: true,
           updated_at: true,
           avatar: true,
@@ -152,7 +162,11 @@ export class UserService {
       }
       await this.prisma.user.update({
         where: { id: id },
-        data: { approved_at: DateHelper.now() },
+        data: {
+          approved_at: DateHelper.now(),
+          approved: true,
+          rejected: false,
+        },
       });
       return {
         success: true,
@@ -179,7 +193,11 @@ export class UserService {
       }
       await this.prisma.user.update({
         where: { id: id },
-        data: { approved_at: null },
+        data: {
+          approved_at: null,
+          approved: false,
+          rejected: true,
+        },
       });
       return {
         success: true,

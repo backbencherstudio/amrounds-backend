@@ -226,6 +226,11 @@ export class AuthService {
 
     if (user) {
       if (user.type != 'admin') {
+        if (user.rejected) {
+          throw new UnauthorizedException(
+            'Your account has been rejected, please contact support',
+          );
+        }
         if (user.status == 0 || user.email_verified_at == null) {
           throw new UnauthorizedException('User not verified');
         }
