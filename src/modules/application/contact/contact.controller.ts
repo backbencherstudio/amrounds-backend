@@ -11,14 +11,7 @@ export class ContactController {
   @ApiOperation({ summary: 'Create contact' })
   @Post()
   async create(@Body() createContactDto: CreateContactDto) {
-    try {
-      const contact = await this.contactService.create(createContactDto);
-      return contact;
-    } catch (error) {
-      return {
-        success: false,
-        message: error.message,
-      };
-    }
+    const contact = await this.contactService.create(createContactDto);
+    return contact;
   }
 }
