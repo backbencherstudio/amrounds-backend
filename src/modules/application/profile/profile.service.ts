@@ -20,6 +20,43 @@ import { DiscoverProfileQueryDTO } from './dto/query-profile.dto';
 export class ProfileService {
   constructor(private readonly prisma: PrismaService) {}
 
+  async getProfileStats(user_id: string) {
+    const [totalTest, totalCompletedTest, totalScore] =
+      await this.prisma.$transaction([
+        this.prisma.test.count({
+          where: {
+            user_id,
+          },
+        }),
+        this.prisma.test.count({
+          where: {
+            user_id,
+            is_completed: true,
+          },
+        }),
+        this.prisma.test.aggregate({
+          where: {
+            user_id,
+            is_completed: true,
+          },
+          _sum: {
+            score: true,
+          },
+        }),
+      ]);
+
+    const avgCorrectPercentage =
+      totalScore._sum.score / totalCompletedTest || 0;
+    const totalCompletedPercentage = (totalCompletedTest / totalTest) * 100;
+
+    return {
+      total_test: totalTest,
+      total_completed_test: totalCompletedTest,
+      correct_percentage: +avgCorrectPercentage.toFixed(2),
+      completed_percentage: +totalCompletedPercentage.toFixed(2),
+    };
+  }
+
   async discoverProfile(user_id: string, query: DiscoverProfileQueryDTO) {
     const { search = '', page = 1, limit = 10 } = query;
     const offset = (page - 1) * limit;
