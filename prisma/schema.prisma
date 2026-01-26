@@ -370,11 +370,11 @@ model Faq {
 }
 
 model Contact {
-  id         String    @id @default(cuid())
-  created_at DateTime  @default(now())
-  updated_at DateTime  @default(now())
-  deleted_at DateTime?
-
+  id           String    @id @default(cuid())
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @default(now())
+  deleted_at   DateTime?
+  name         String?
   first_name   String?
   last_name    String?
   email        String?
