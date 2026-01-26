@@ -665,4 +665,103 @@ export class TestService {
       },
     };
   }
+  async getTestHistoriesStats(user_id: string) {
+    const [
+      totalTests,
+      completedTests,
+      {
+        _sum: { score: scoreSum },
+      },
+      {
+        _max: { score: bestScore },
+      },
+      {
+        _sum: { total_questions: totalQuestions },
+      },
+      {
+        _sum: { score: lastWeekScore },
+      },
+      {
+        _sum: { score: thisWeekScore },
+      },
+    ] = await Promise.all([
+      this.prisma.test.count({
+        where: {
+          user_id,
+        },
+      }),
+      this.prisma.test.count({
+        where: {
+          user_id,
+          is_completed: true,
+        },
+      }),
+      this.prisma.test.aggregate({
+        where: {
+          user_id,
+          is_completed: true,
+        },
+        _sum: {
+          score: true,
+        },
+      }),
+      this.prisma.test.aggregate({
+        where: {
+          user_id,
+          is_completed: true,
+        },
+        _max: {
+          score: true,
+        },
+      }),
+      this.prisma.test.aggregate({
+        where: {
+          user_id,
+          is_completed: true,
+        },
+        _sum: {
+          total_questions: true,
+        },
+      }),
+      this.prisma.test.aggregate({
+        where: {
+          user_id,
+          is_completed: true,
+          created_at: {
+            gte: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000),
+            lt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+          },
+        },
+        _sum: {
+          score: true,
+        },
+      }),
+      this.prisma.test.aggregate({
+        where: {
+          user_id,
+          is_completed: true,
+          created_at: {
+            gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+          },
+        },
+        _sum: {
+          score: true,
+        },
+      }),
+    ]);
+
+    const comparisonScore = thisWeekScore - lastWeekScore || 0;
+    return {
+      success: true,
+      message: 'Test history stats retrieved successfully',
+      data: {
+        total_tests: totalTests || 0,
+        completed_tests: completedTests || 0,
+        average_score: +(scoreSum / (completedTests || 1)).toFixed(2) || 0,
+        best_score: +bestScore?.toFixed(2) || 0,
+        comparison_score: +comparisonScore.toFixed(2) || 0,
+        total_questions: totalQuestions || 0,
+      },
+    };
+  }
 }
