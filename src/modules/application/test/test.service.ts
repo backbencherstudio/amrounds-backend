@@ -7,6 +7,7 @@ import { SojebStorage } from 'src/common/lib/Disk/SojebStorage';
 import appConfig from 'src/config/app.config';
 import { MarkQuestionDto } from './dto/mark-question.dto';
 import { SkipQuestionDto } from './dto/skip-question.dto';
+import { TestHistoryDto } from './dto/query-test.dto';
 
 @Injectable()
 export class TestService {
@@ -630,5 +631,38 @@ export class TestService {
         message: error.message || 'Failed to retrieve test result',
       };
     }
+  }
+
+  async getTestHistories(user_id: string, query: TestHistoryDto) {
+    const { page = 1, limit = 10, search } = query;
+    const skip = (page - 1) * limit;
+    const tests = await this.prisma.test.findMany({
+      where: {
+        user_id,
+      },
+      select: {
+        id: true,
+        created_at: true,
+        test_mode: true,
+        difficulty: true,
+        topic: true,
+        total_questions: true,
+        score: true,
+        is_completed: true,
+      },
+      skip,
+      take: limit,
+    });
+
+    return {
+      success: true,
+      message: 'Test history retrieved successfully',
+      data: tests || [],
+      meta_data: {
+        page,
+        limit,
+        total: tests?.length || 0,
+      },
+    };
   }
 }

@@ -12,60 +12,87 @@ export class CustomExceptionFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse();
+    const request = ctx.getRequest();
 
-    // Default to Internal Server Error
+    const isDev = process.env.NODE_ENV === 'development';
+
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
-    let message: string | string[] = 'Internal server error';
+    let message: string | string[] =
+      'Something went wrong. Please try again later.';
 
+    /* ===============================
+       1️⃣ HTTP Exceptions
+    =============================== */
     if (exception instanceof HttpException) {
       status = exception.getStatus();
-      const exceptionResponse = exception.getResponse();
+      const res = exception.getResponse();
 
-      if (typeof exceptionResponse === 'string') {
-        message = exceptionResponse;
-      } else if (
-        typeof exceptionResponse === 'object' &&
-        exceptionResponse !== null &&
-        'message' in exceptionResponse
-      ) {
-        const msg = (exceptionResponse as any).message;
+      if (typeof res === 'string') {
+        message = res;
+      } else if (typeof res === 'object' && res && 'message' in res) {
+        const msg = (res as any).message;
         message = Array.isArray(msg) ? msg.join(', ') : msg;
       }
     } else if (exception instanceof Prisma.PrismaClientKnownRequestError) {
-      // Handle known Prisma errors
+      /* ===============================
+       2️⃣ Prisma Known Errors
+    =============================== */
       if (exception.code === 'P2002') {
         status = HttpStatus.CONFLICT;
-        // P2002: Unique constraint failed
-        const target = exception.meta?.target;
-        if (Array.isArray(target)) {
-          message = `Unique constraint violation: ${target.join(', ')} already exists`;
-        } else {
-          message = `Unique constraint violation: Record already exists`;
-        }
+        message = 'This record already exists.';
       } else if (exception.code === 'P2025') {
         status = HttpStatus.NOT_FOUND;
-        message = 'Record not found';
+        message = 'Requested record was not found.';
       } else {
-        // Other Prisma errors
-        if (process.env.NODE_ENV === 'development') {
-          message = exception.message.replace(/\n/g, '');
-        }
+        status = HttpStatus.BAD_REQUEST;
+        message = 'Database operation failed.';
       }
-    } else {
-      // Handle other non-HttpExceptions
-      if (process.env.NODE_ENV === 'development') {
-        if (exception instanceof Error) {
-          message = exception.message;
-        } else {
-          message = String(exception);
-        }
-      }
+
+      if (isDev) message = exception.message;
+    } else if (exception instanceof Prisma.PrismaClientValidationError) {
+      /* ===============================
+       3️⃣ Prisma Validation Errors
+    =============================== */
+      status = HttpStatus.BAD_REQUEST;
+      message = 'Invalid data provided.';
+
+      if (isDev) message = exception.message;
+    } else if (exception instanceof Error) {
+      /* ===============================
+       4️⃣ System / JS Errors
+    =============================== */
+      status = HttpStatus.INTERNAL_SERVER_ERROR;
+      message = isDev ? exception.message : 'Internal server error occurred.';
     }
 
-    // Format response
+    /* ===============================
+       5️⃣ DEV Console Group Logging
+    =============================== */
+    if (isDev) {
+      console.group(
+        `%c🚨 API ERROR [${new Date().toISOString()}]`,
+        'color:red;font-weight:bold;',
+      );
+
+      console.log('📍 Path:', request?.method, request?.url);
+      console.log('📦 Status:', status);
+      console.log('💬 Client Message:', message);
+
+      if (exception instanceof Error) {
+        console.log('🧠 Error Name:', exception.name);
+        console.log('📄 Error Message:', exception.message);
+        console.log('📚 Stack Trace ↓');
+        console.error(exception.stack);
+      } else {
+        console.log('⚠️ Raw Exception:', exception);
+      }
+
+      console.groupEnd();
+    }
+
     response.status(status).json({
       success: false,
-      message: message,
+      message,
     });
   }
 }
