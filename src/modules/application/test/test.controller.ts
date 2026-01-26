@@ -22,6 +22,7 @@ import { Role } from 'src/common/guard/role/role.enum';
 import { AnswerTestDto } from './dto/answer-test.dto';
 import { MarkQuestionDto } from './dto/mark-question.dto';
 import { SkipQuestionDto } from './dto/skip-question.dto';
+import { TestHistoryDto } from './dto/query-test.dto';
 
 @ApiBearerAuth()
 @ApiTags('Test')
@@ -65,5 +66,11 @@ export class TestController {
   getTestResult(@Req() req: Request, @Query('test_id') test_id: string) {
     const user_id = req.user.userId;
     return this.testService.getTestResult(user_id, test_id);
+  }
+
+  @Get('histories')
+  getTestHistories(@Req() req: Request, @Query() query: TestHistoryDto) {
+    const user_id = req.user.userId;
+    return this.testService.getTestHistories(user_id, query);
   }
 }
