@@ -73,4 +73,9 @@ export class TestController {
     const user_id = req.user.userId;
     return this.testService.getTestHistories(user_id, query);
   }
+  @Get('histories-stats')
+  getTestHistoriesStats(@Req() req: Request) {
+    const user_id = req.user.userId;
+    return this.testService.getTestHistoriesStats(user_id);
+  }
 }
