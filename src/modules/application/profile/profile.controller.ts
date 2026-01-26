@@ -35,6 +35,11 @@ export class ProfileController {
     return this.profileService.getProfile(req.user.userId);
   }
 
+  @Get('stats')
+  getProfileStats(@Req() req: Request) {
+    return this.profileService.getProfileStats(req.user.userId);
+  }
+
   @Get('discover')
   discoverProfile(
     @Query() query: DiscoverProfileQueryDTO,
