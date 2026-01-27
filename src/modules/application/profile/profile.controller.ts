@@ -31,8 +31,8 @@ export class ProfileController {
   constructor(private readonly profileService: ProfileService) {}
 
   @Get()
-  getProfile(@Req() req: Request) {
-    return this.profileService.getProfile(req.user.userId);
+  getProfile(@Req() req: Request, @Query('user_id') user_id?: string) {
+    return this.profileService.getProfile(user_id ?? req.user.userId);
   }
 
   @Get('stats')
@@ -48,10 +48,6 @@ export class ProfileController {
     return this.profileService.discoverProfile(req.user.userId, query);
   }
 
-  @Get('map-data')
-  getMapData() {
-    return this.profileService.getMapData();
-  }
   @Post('education')
   createEducation(
     @Body() createEducationDto: CreateEducationDto,
