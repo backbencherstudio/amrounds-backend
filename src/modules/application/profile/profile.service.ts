@@ -587,30 +587,4 @@ export class ProfileService {
       message: 'Publication deleted successfully',
     };
   }
-
-  async getMapData() {
-    const groupedData = await this.prisma.user.groupBy({
-      by: ['city', 'country'],
-      where: {
-        is_public: true,
-        status: 1,
-        type: 'user',
-        city: { not: null },
-        country: { not: null },
-      },
-      _count: {
-        id: true,
-      },
-    });
-
-    return {
-      success: true,
-      message: 'Map data retrieved successfully',
-      data: groupedData.map((item) => ({
-        city: item.city,
-        country: item.country,
-        count: item._count.id,
-      })),
-    };
-  }
 }
