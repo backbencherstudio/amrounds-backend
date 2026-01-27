@@ -1,34 +1,24 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Query, Req, UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from 'src/modules/auth/guards/jwt-auth.guard';
 import { LeaderboardService } from './leaderboard.service';
-import { CreateLeaderboardDto } from './dto/create-leaderboard.dto';
-import { UpdateLeaderboardDto } from './dto/update-leaderboard.dto';
-
+import { GetLeaderboardDto } from './dto/query-leaderboard.dto';
+import { RolesGuard } from 'src/common/guard/role/roles.guard';
+import { Roles } from 'src/common/guard/role/roles.decorator';
+import { Role } from 'src/common/guard/role/role.enum';
 @Controller('leaderboard')
 export class LeaderboardController {
   constructor(private readonly leaderboardService: LeaderboardService) {}
 
-  @Post()
-  create(@Body() createLeaderboardDto: CreateLeaderboardDto) {
-    return this.leaderboardService.create(createLeaderboardDto);
-  }
-
   @Get()
-  findAll() {
-    return this.leaderboardService.findAll();
-  }
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.USER)
+  getLeaderboard(@Query() query: GetLeaderboardDto, @Req() req: any) {
+    const targetUserId = query.user_id || req?.user?.userId;
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.leaderboardService.findOne(+id);
+    return this.leaderboardService.getLeaderboard(targetUserId, query);
   }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateLeaderboardDto: UpdateLeaderboardDto) {
-    return this.leaderboardService.update(+id, updateLeaderboardDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.leaderboardService.remove(+id);
+  @Get('map-data')
+  getMapData() {
+    return this.leaderboardService.getMapData();
   }
 }
