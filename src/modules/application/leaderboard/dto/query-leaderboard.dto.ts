@@ -25,4 +25,8 @@ export class GetLeaderboardDto extends PaginationDto {
   @IsOptional()
   @IsString()
   search?: string;
+
+  @IsOptional()
+  @IsEnum(['high_accuracy', 'top_10', 'active_users'])
+  filter?: 'high_accuracy' | 'top_10' | 'active_users';
 }
