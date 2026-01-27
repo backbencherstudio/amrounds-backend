@@ -11,13 +11,11 @@ export class LeaderboardService {
   async getLeaderboard(userId: string, query: GetLeaderboardDto) {
     let { period = 'week', search, page = 1, limit = 10, filter } = query;
 
-    // Apply Filter presets
     if (filter === 'top_10') {
       limit = 10;
       page = 1;
     }
 
-    // 1. Calculate Date Filter
     let fromDate: Date;
     const now = new Date();
     if (period === 'week') {
@@ -27,23 +25,18 @@ export class LeaderboardService {
     } else if (period === 'year') {
       fromDate = new Date(now.setFullYear(now.getFullYear() - 1));
     } else {
-      // 'all' - set to a very old date
       fromDate = new Date('2000-01-01');
     }
 
     const offset = (page - 1) * limit;
     const searchPattern = search ? `%${search}%` : null;
 
-    // Filter Conditions
     let havingClause = '';
     if (filter === 'high_accuracy') {
       havingClause = 'AND accuracy >= 70';
     } else if (filter === 'active_users') {
       havingClause = 'AND total_tests >= 50';
     }
-
-    // 2. Fetch Leaderboard (Raw SQL) & Current User Stats (Parallel)
-    // We construct a reusable stats CTE part
     const statsQuery = (forUser?: string) => `
       WITH base_stats AS (
         SELECT
@@ -113,7 +106,6 @@ export class LeaderboardService {
           offset,
         ),
 
-        // Current User Stats - We want their global rank, so we execute similar query but select specific user
         this.prisma.$queryRawUnsafe<any[]>(
           `
       ${statsQuery()}

@@ -78,4 +78,25 @@ export class MailService {
       console.log(error);
     }
   }
+  async sendContactNotification({ adminEmail, contact }) {
+    try {
+      const from = `${process.env.APP_NAME} <${appConfig().mail.from}>`;
+      const subject = `New Contact: ${contact.subject}`;
+
+      await this.queue.add('sendContactNotification', {
+        to: adminEmail,
+        from: from,
+        subject: subject,
+        template: 'contact-notification',
+        context: {
+          name: contact.name,
+          email: contact.email,
+          subject: contact.subject,
+          message: contact.message,
+        },
+      });
+    } catch (error) {
+      console.log(error);
+    }
+  }
 }
