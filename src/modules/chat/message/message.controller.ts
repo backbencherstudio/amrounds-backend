@@ -60,12 +60,14 @@ export class MessageController {
         },
       };
 
-      this.messageGateway.server
-        .to(message.data.conversation_id)
-        .emit('message', {
-          from: message.data.sender_id,
-          data: messageData,
-        });
+      const userSocketId = this.messageGateway.clients.get(
+        message.data.receiver_id,
+      );
+
+      this.messageGateway.server.to(userSocketId).emit('message', {
+        from: message.data.sender_id,
+        data: messageData,
+      });
       return {
         success: message.success,
         message: message.message,
