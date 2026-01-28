@@ -6,7 +6,10 @@ import {
   UseGuards,
   Get,
   Query,
+  UseInterceptors,
+  UploadedFiles,
 } from '@nestjs/common';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import { MessageService } from './message.service';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { MessageGateway } from './message.gateway';
@@ -26,12 +29,24 @@ export class MessageController {
 
   @ApiOperation({ summary: 'Send message' })
   @Post()
+  @UseInterceptors(
+    FilesInterceptor('files', 5, {
+      limits: {
+        fileSize: 25 * 1024 * 1024,
+      },
+    }),
+  )
   async create(
     @Req() req: Request,
     @Body() createMessageDto: CreateMessageDto,
+    @UploadedFiles() files: Array<Express.Multer.File>,
   ) {
     const user_id = req.user.userId;
-    const message = await this.messageService.create(user_id, createMessageDto);
+    const message = await this.messageService.create(
+      user_id,
+      createMessageDto,
+      files,
+    );
     if (message.success) {
       const messageData = {
         message: {
@@ -41,8 +56,10 @@ export class MessageController {
           from: message.data.sender_id,
           conversation_id: message.data.conversation_id,
           created_at: message.data.created_at,
+          attachments: message.data.attachments,
         },
       };
+
       this.messageGateway.server
         .to(message.data.conversation_id)
         .emit('message', {

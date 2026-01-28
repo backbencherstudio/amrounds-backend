@@ -67,4 +67,52 @@ export class NotificationRepository {
 
     return notification;
   }
+
+  async deleteNotification({
+    sender_id,
+    receiver_id,
+    type,
+    entity_id,
+  }: {
+    sender_id?: string;
+    receiver_id?: string;
+    type?: string;
+    entity_id?: string;
+  }) {
+    const whereCondition: any = {};
+    if (sender_id) {
+      whereCondition.sender_id = sender_id;
+    }
+    if (receiver_id) {
+      whereCondition.receiver_id = receiver_id;
+    }
+    if (type) {
+      whereCondition.notification_event = {
+        type: type,
+      };
+    }
+    if (entity_id) {
+      whereCondition.entity_id = entity_id;
+    }
+
+    const notification = await this.prisma.notification.findFirst({
+      where: whereCondition,
+    });
+
+    if (notification) {
+      await this.prisma.notification.delete({
+        where: {
+          id: notification.id,
+        },
+      });
+      // also delete notification event
+      if (notification.notification_event_id) {
+        await this.prisma.notificationEvent.delete({
+          where: {
+            id: notification.notification_event_id,
+          },
+        });
+      }
+    }
+  }
 }
