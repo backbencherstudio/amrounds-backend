@@ -15,6 +15,8 @@ import { SojebStorage } from '../../common/lib/Disk/SojebStorage';
 import { DateHelper } from '../../common/helper/date.helper';
 import { StripePayment } from '../../common/lib/Payment/stripe/StripePayment';
 import { StringHelper } from '../../common/helper/string.helper';
+import { NotificationRepository } from 'src/common/repository/notification/notification.repository';
+import { MessageGateway } from '../chat/message/message.gateway';
 
 @Injectable()
 export class AuthService {
@@ -24,6 +26,8 @@ export class AuthService {
     private mailService: MailService,
     private userRepository: UserRepository,
     private ucodeRepository: UcodeRepository,
+    private notificationRepository: NotificationRepository,
+    private messageGateway: MessageGateway,
     @InjectRedis() private readonly redis: Redis,
   ) {}
 
@@ -480,6 +484,38 @@ export class AuthService {
           success: false,
           message: 'Failed to create account',
         };
+      }
+
+      // admin notification for approve
+      const admins = await this.prisma.user.findMany({
+        where: {
+          type: 'admin',
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      if (admins && admins.length > 0) {
+        for (const admin of admins) {
+          const registerNotificationPayload: any = {
+            sender_id: null,
+            receiver_id: admin.id,
+            text: `Register a new user ${name}. Please approve it.`,
+            type: 'user_registered',
+          };
+
+          await this.notificationRepository.createNotification(
+            registerNotificationPayload,
+          );
+
+          const adminSocketId = await this.messageGateway.clients.get(admin.id);
+          if (adminSocketId) {
+            this.messageGateway.server
+              .to(adminSocketId)
+              .emit('user_registered', registerNotificationPayload);
+          }
+        }
       }
 
       // create stripe customer account
