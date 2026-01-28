@@ -99,6 +99,8 @@ model User {
   sender_notifications      Notification[] @relation("sender")
   followings                Follow[]       @relation("followings")
   followers                 Follow[]       @relation("followers")
+  reports                   Report[]       @relation("reporter")
+  reported                  Report[]       @relation("reported")
 
   user_payment_methods UserPaymentMethod[]
   user_settings        UserSetting[]
@@ -654,6 +656,24 @@ model Activity {
   description String?
 
   @@map("activities")
+}
+
+// --------------- Report model ----------------
+model Report {
+  id         String    @id @default(cuid())
+  created_at DateTime  @default(now())
+  updated_at DateTime  @default(now())
+  deleted_at DateTime?
+
+  reporter_id String
+  reporter    User   @relation("reporter", fields: [reporter_id], references: [id], onDelete: Cascade)
+
+  reported_id String?
+  reported    User?   @relation("reported", fields: [reported_id], references: [id], onDelete: Cascade)
+
+  description String?
+
+  @@map("reports")
 }
 
 model Test {

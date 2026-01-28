@@ -1,4 +1,5 @@
 import {
+  HttpException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -14,7 +15,10 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { SojebStorage } from 'src/common/lib/Disk/SojebStorage';
 import appConfig from 'src/config/app.config';
 import { Prisma } from 'prisma/generated/client';
-import { DiscoverProfileQueryDTO } from './dto/query-profile.dto';
+import {
+  DiscoverProfileQueryDTO,
+  PaginationDto,
+} from './dto/query-profile.dto';
 import { NotificationRepository } from 'src/common/repository/notification/notification.repository';
 import { MessageGateway } from 'src/modules/chat/message/message.gateway';
 
@@ -67,7 +71,6 @@ export class ProfileService {
     const { search = '', page = 1, limit = 10 } = query;
     const offset = (page - 1) * limit;
 
-    // 1. Fetch current user data for suggestion matching
     const currentUser = await this.prisma.user.findUnique({
       where: { id: user_id },
       include: {
@@ -81,9 +84,6 @@ export class ProfileService {
     if (!currentUser) {
       throw new NotFoundException('Current user not found');
     }
-
-    // Prepare arrays for matching (Lowercased for loose matching)
-    // We join them with a delimiter to pass as a single string and unnest in SQL for fuzzy matching
     const delimiter = '<->';
     const joinForSql = (arr: string[]) => arr.join(delimiter);
 
@@ -106,35 +106,13 @@ export class ProfileService {
       .map((p) => p.topic?.toLowerCase())
       .filter(Boolean);
 
-    // Helpers to safely join strings for SQL IN clauses or similar logic
-    // Since we are using raw query, we must be careful with arrays.
-    // For simplicity in raw SQL with array matching, we can use specific SQL constructions
-    // but Prisma $queryRaw supports parameter substitution which is safer.
-
-    // 2. Enable pg_trgm extension if not exists (Best effort)
     try {
       await this.prisma.$executeRawUnsafe(
         `CREATE EXTENSION IF NOT EXISTS pg_trgm;`,
       );
-    } catch (e) {
-      // Ignore permission errors if already enabled or not allowed
-    }
+    } catch (e) {}
 
-    // 3. Build the Query
-    // We will select users and calculate scores.
-    // Note: Parameterized query is complex with dynamic arrays.
-    // We'll use a mix of raw text matching and exact matches.
-
-    // Base similarity for search
-    // We'll default search to empty string if not provided to avoid null issues in similarity
     const searchTerm = search || '';
-
-    // Calculate Suggestion Score Logic in SQL:
-    // We'll add points for matching fields.
-    // Explicitly casting to text to ensure type safety in raw query
-
-    // Constructing the array parts of the query is tricky with template literals and arrays.
-    // We will do precise values checks.
 
     const users: any[] = await this.prisma.$queryRaw`
       SELECT 
@@ -257,13 +235,58 @@ export class ProfileService {
       LIMIT ${limit}
       OFFSET ${offset}
     `;
-
-    // Count total for pagination meta (simplified, maybe separate query)
-    // For now, return list
     return {
       success: true,
       data: users,
       meta: {
+        page: Number(page),
+        limit: Number(limit),
+      },
+    };
+  }
+
+  async getConnections(user_id: string, query: PaginationDto) {
+    const { page = 1, limit = 10 } = query;
+
+    const connections = await this.prisma.follow.findMany({
+      where: {
+        OR: [{ following_id: user_id }, { follower_id: user_id }],
+      },
+      include: {
+        follower: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+            current_practice: true,
+            training_practice: true,
+          },
+        },
+        following: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+            current_practice: true,
+            training_practice: true,
+          },
+        },
+      },
+      orderBy: {
+        created_at: 'desc',
+      },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+    return {
+      success: true,
+      data: connections.map((connection) => {
+        if (connection.follower_id === user_id) {
+          return connection.following;
+        }
+        return connection.follower;
+      }),
+      meta_data: {
         page: Number(page),
         limit: Number(limit),
       },
@@ -364,6 +387,21 @@ export class ProfileService {
         followings: _count.followings,
         followers: _count.followers,
       },
+    };
+  }
+
+  async reportUser(user_id: string, target_id: string, reason?: string) {
+    const report = await this.prisma.report.create({
+      data: {
+        reporter_id: user_id,
+        reported_id: target_id,
+        description: reason || null,
+      },
+    });
+    if (!report) throw new HttpException('failed to report user', 400);
+    return {
+      success: true,
+      message: 'Reported successfully',
     };
   }
 

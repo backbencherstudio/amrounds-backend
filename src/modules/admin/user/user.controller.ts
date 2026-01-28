@@ -17,7 +17,7 @@ import { Role } from '../../../common/guard/role/role.enum';
 import { Roles } from '../../../common/guard/role/roles.decorator';
 import { RolesGuard } from '../../../common/guard/role/roles.guard';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
-import { GetAllUserDto } from './dto/query-user.dto';
+import { GetAllUserDto, PaginationDto } from './dto/query-user.dto';
 
 @ApiBearerAuth()
 @ApiTags('User')
@@ -48,6 +48,10 @@ export class UserController {
     return users;
   }
 
+  @Get('reports')
+  getUserReports(@Query() query: PaginationDto) {
+    return this.userService.getUserReports(query);
+  }
   // approve user
   @Roles(Role.ADMIN)
   @ApiResponse({ description: 'Approve a user' })

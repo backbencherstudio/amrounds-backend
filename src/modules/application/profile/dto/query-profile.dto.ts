@@ -1,11 +1,7 @@
 import { Transform } from 'class-transformer';
 import { IsNumber, IsOptional, IsString } from 'class-validator';
 
-export class DiscoverProfileQueryDTO {
-  @IsOptional()
-  @IsString()
-  search?: string;
-
+export class PaginationDto {
   @IsOptional()
   @Transform(({ value }) => (value ? Number(value) : 1))
   @IsNumber()
@@ -15,4 +11,10 @@ export class DiscoverProfileQueryDTO {
   @Transform(({ value }) => (value ? Number(value) : 10))
   @IsNumber()
   limit?: number = 10;
+}
+
+export class DiscoverProfileQueryDTO extends PaginationDto {
+  @IsOptional()
+  @IsString()
+  search?: string;
 }
