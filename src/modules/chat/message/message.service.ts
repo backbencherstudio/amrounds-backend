@@ -20,7 +20,11 @@ export class MessageService {
     private chatRepository: ChatRepository,
   ) {}
 
-  async create(user_id: string, createMessageDto: CreateMessageDto) {
+  async create(
+    user_id: string,
+    createMessageDto: CreateMessageDto,
+    files?: Array<Express.Multer.File>,
+  ) {
     try {
       const data: any = {};
 
@@ -72,6 +76,30 @@ export class MessageService {
         },
       });
 
+      const attachments = [];
+      if (files && files.length > 0) {
+        for (const file of files) {
+          const fileName = `${DateHelper.now().getTime()}_${file.originalname}`;
+          await SojebStorage.put(
+            appConfig().storageUrl.attachment + '/' + fileName,
+            file.buffer,
+          );
+          const attachment = await this.prisma.attachment.create({
+            data: {
+              name: fileName,
+              type: file.mimetype,
+              size: file.size,
+              file: fileName,
+              message_id: message.id,
+            },
+          });
+          attachment['file_url'] = SojebStorage.url(
+            appConfig().storageUrl.attachment + '/' + fileName,
+          );
+          attachments.push(attachment);
+        }
+      }
+
       // update conversation updated_at
       await this.prisma.conversation.update({
         where: {
@@ -88,7 +116,10 @@ export class MessageService {
 
       return {
         success: true,
-        data: message,
+        data: {
+          ...message,
+          attachments,
+        },
         message: 'Message sent successfully',
       };
     } catch (error) {
@@ -173,7 +204,7 @@ export class MessageService {
             },
           },
 
-          attachment: {
+          attachments: {
             select: {
               id: true,
               name: true,
@@ -187,10 +218,12 @@ export class MessageService {
 
       // add attachment url
       for (const message of messages) {
-        if (message.attachment) {
-          message.attachment['file_url'] = SojebStorage.url(
-            appConfig().storageUrl.attachment + message.attachment.file,
-          );
+        if (message.attachments) {
+          for (const attachment of message.attachments) {
+            attachment['file_url'] = SojebStorage.url(
+              appConfig().storageUrl.attachment + attachment.file,
+            );
+          }
         }
       }
 
