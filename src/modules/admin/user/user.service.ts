@@ -7,12 +7,16 @@ import appConfig from '../../../config/app.config';
 import { SojebStorage } from '../../../common/lib/Disk/SojebStorage';
 import { DateHelper } from '../../../common/helper/date.helper';
 import { GetAllUserDto } from './dto/query-user.dto';
+import { MessageGateway } from 'src/modules/chat/message/message.gateway';
+import { NotificationRepository } from 'src/common/repository/notification/notification.repository';
 
 @Injectable()
 export class UserService {
   constructor(
     private prisma: PrismaService,
     private userRepository: UserRepository,
+    private messageGateway: MessageGateway,
+    private notificationRepository: NotificationRepository,
   ) {}
 
   async create(createUserDto: CreateUserDto) {
@@ -161,18 +165,44 @@ export class UserService {
           message: 'User not found',
         };
       }
+
       await this.prisma.user.update({
         where: { id: id },
         data: {
           approved_at: DateHelper.now(),
           approved: true,
           rejected: false,
+          verifiy_document: null,
         },
       });
+
+      if (user.verifiy_document) {
+        await SojebStorage.delete(
+          appConfig().storageUrl.verification_doc + '/' + user.verifiy_document,
+        );
+      }
+
       await this.createActivity({
         title: 'User approved',
         description: `User ${user.name} has been approved`,
       });
+
+      const approveNotificationPayload: any = {
+        sender_id: null,
+        receiver_id: user.id,
+        message: 'Your account has been approved',
+        type: 'approved',
+      };
+
+      await this.notificationRepository.createNotification(
+        approveNotificationPayload,
+      );
+
+      const userSocketId = this.messageGateway.clients.get(user.id);
+      if (userSocketId) {
+        this.messageGateway.server.to(userSocketId).emit('approved', user);
+      }
+
       return {
         success: true,
         message: 'User approved successfully',
@@ -204,12 +234,37 @@ export class UserService {
           approved_at: null,
           approved: false,
           rejected: true,
+          verifiy_document: null,
         },
       });
+
+      if (user.verifiy_document) {
+        await SojebStorage.delete(
+          appConfig().storageUrl.verification_doc + '/' + user.verifiy_document,
+        );
+      }
+
       await this.createActivity({
         title: 'User rejected',
         description: `User ${user.name} has been rejected`,
       });
+
+      const rejectNotificationPayload: any = {
+        sender_id: null,
+        receiver_id: user.id,
+        message: 'Your account has been rejected',
+        type: 'rejected',
+      };
+
+      await this.notificationRepository.createNotification(
+        rejectNotificationPayload,
+      );
+
+      const userSocketId = this.messageGateway.clients.get(user.id);
+      if (userSocketId) {
+        this.messageGateway.server.to(userSocketId).emit('rejected', user);
+      }
+
       return {
         success: true,
         message: 'User rejected successfully',

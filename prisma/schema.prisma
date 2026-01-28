@@ -306,13 +306,14 @@ model Message {
   receiver_id String?
   receiver    User?   @relation("receiver", fields: [receiver_id], references: [id])
 
+  receiver_deleted_at DateTime?
+
   conversation_id String?
   conversation    Conversation? @relation(fields: [conversation_id], references: [id], onDelete: Cascade)
 
-  attachment_id String?
-  attachment    Attachment? @relation(fields: [attachment_id], references: [id])
-
   message String?
+
+  attachments Attachment[]
 
   @@map("messages")
 }
@@ -324,13 +325,13 @@ model Attachment {
   updated_at DateTime  @default(now())
   deleted_at DateTime?
 
-  name     String?
-  type     String?
-  size     Int?
-  file     String?
-  file_alt String?
-
-  messages Message[]
+  name       String?
+  type       String?
+  size       Int?
+  file       String?
+  file_alt   String?
+  message_id String?
+  message    Message? @relation(fields: [message_id], references: [id])
 
   @@map("attachments")
 }

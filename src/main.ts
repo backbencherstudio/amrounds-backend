@@ -26,7 +26,6 @@ async function bootstrap() {
     origin: ['http://localhost:3000', '*'],
     credentials: true,
   });
-
   app.use(
     helmet({
       crossOriginResourcePolicy: { policy: 'cross-origin' },
