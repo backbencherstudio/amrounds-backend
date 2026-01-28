@@ -94,130 +94,123 @@ export class AuthService {
     updateUserDto: UpdateUserDto,
     avatar?: Express.Multer.File,
   ) {
-    try {
-      const data: any = {};
-      if (updateUserDto.name) {
-        data.name = updateUserDto.name;
-      }
-      // if (updateUserDto.first_name) {
-      //   data.first_name = updateUserDto.first_name;
-      // }
-      // if (updateUserDto.last_name) {
-      //   data.last_name = updateUserDto.last_name;
-      // }
-      // if (updateUserDto.phone_number) {
-      //   data.phone_number = updateUserDto.phone_number;
-      // }
-      // if (updateUserDto.country) {
-      //   data.country = updateUserDto.country;
-      // }
-      // if (updateUserDto.state) {
-      //   data.state = updateUserDto.state;
-      // }
-      // if (updateUserDto.local_government) {
-      //   data.local_government = updateUserDto.local_government;
-      // }
-      // if (updateUserDto.city) {
-      //   data.city = updateUserDto.city;
-      // }
-      // if (updateUserDto.zip_code) {
-      //   data.zip_code = updateUserDto.zip_code;
-      // }
-      if (updateUserDto.address) {
-        data.address = updateUserDto.address;
-      }
-      // if (updateUserDto.gender) {
-      //   data.gender = updateUserDto.gender;
-      // }
-      // if (updateUserDto.date_of_birth) {
-      //   data.date_of_birth = DateHelper.format(updateUserDto.date_of_birth);
-      // }
-      if (updateUserDto.bio) {
-        data.bio = updateUserDto.bio;
-      }
-      if (updateUserDto.instagram) {
-        data.instagram = updateUserDto.instagram;
-      }
-      if (updateUserDto.twitter_x) {
-        data.twitter_x = updateUserDto.twitter_x;
-      }
-      if (updateUserDto.facebook) {
-        data.facebook = updateUserDto.facebook;
-      }
-      if (updateUserDto.linkedin) {
-        data.linkedin = updateUserDto.linkedin;
-      }
+    const data: any = {};
+    if (updateUserDto.name) {
+      data.name = updateUserDto.name;
+    }
+    // if (updateUserDto.first_name) {
+    //   data.first_name = updateUserDto.first_name;
+    // }
+    // if (updateUserDto.last_name) {
+    //   data.last_name = updateUserDto.last_name;
+    // }
+    // if (updateUserDto.phone_number) {
+    //   data.phone_number = updateUserDto.phone_number;
+    // }
+    // if (updateUserDto.country) {
+    //   data.country = updateUserDto.country;
+    // }
+    // if (updateUserDto.state) {
+    //   data.state = updateUserDto.state;
+    // }
+    // if (updateUserDto.local_government) {
+    //   data.local_government = updateUserDto.local_government;
+    // }
+    // if (updateUserDto.city) {
+    //   data.city = updateUserDto.city;
+    // }
+    // if (updateUserDto.zip_code) {
+    //   data.zip_code = updateUserDto.zip_code;
+    // }
+    if (updateUserDto.address) {
+      data.address = updateUserDto.address;
+    }
+    // if (updateUserDto.gender) {
+    //   data.gender = updateUserDto.gender;
+    // }
+    // if (updateUserDto.date_of_birth) {
+    //   data.date_of_birth = DateHelper.format(updateUserDto.date_of_birth);
+    // }
+    if (updateUserDto.bio) {
+      data.bio = updateUserDto.bio;
+    }
+    if (updateUserDto.instagram) {
+      data.instagram = updateUserDto.instagram;
+    }
+    if (updateUserDto.twitter_x) {
+      data.twitter_x = updateUserDto.twitter_x;
+    }
+    if (updateUserDto.facebook) {
+      data.facebook = updateUserDto.facebook;
+    }
+    if (updateUserDto.linkedin) {
+      data.linkedin = updateUserDto.linkedin;
+    }
 
-      if (updateUserDto.credentials) {
-        data.credentials = updateUserDto.credentials;
-      }
+    if (updateUserDto.credentials) {
+      data.credentials = updateUserDto.credentials;
+    }
 
-      if (updateUserDto.training_practice) {
-        data.training_practice = updateUserDto.training_practice;
-      }
+    if (updateUserDto.training_practice) {
+      data.training_practice = updateUserDto.training_practice;
+    }
 
-      if (updateUserDto.current_practice) {
-        data.current_practice = updateUserDto.current_practice;
-      }
-      if (updateUserDto.website_notification) {
-        data.website_notification = updateUserDto.website_notification;
-      }
-      if (updateUserDto.email_notification) {
-        data.email_notification = updateUserDto.email_notification;
-      }
+    if (updateUserDto.current_practice) {
+      data.current_practice = updateUserDto.current_practice;
+    }
+    if (updateUserDto.website_notification) {
+      data.website_notification = updateUserDto.website_notification;
+    }
+    if (updateUserDto.email_notification) {
+      data.email_notification = updateUserDto.email_notification;
+    }
 
-      if (updateUserDto.password) {
-        data.password = await this.changePassword({
-          user_id: userId,
-          oldPassword: updateUserDto.password,
-          newPassword: updateUserDto.new_password,
-        });
-      }
+    if (updateUserDto.password) {
+      data.password = await this.changePassword({
+        user_id: userId,
+        oldPassword: updateUserDto.password,
+        newPassword: updateUserDto.new_password,
+      });
+    }
 
-      if (avatar) {
-        // delete old image from storage
-        const oldImage = await this.prisma.user.findFirst({
-          where: { id: userId },
-          select: { avatar: true },
-        });
-        if (oldImage.avatar) {
-          await SojebStorage.delete(
-            appConfig().storageUrl.avatar + '/' + oldImage.avatar,
-          );
-        }
-
-        // upload file
-        const fileName = `${StringHelper.randomString()}${avatar.originalname}`;
-        await SojebStorage.put(
-          appConfig().storageUrl.avatar + fileName,
-          avatar.buffer,
+    if (avatar) {
+      // delete old image from storage
+      const oldImage = await this.prisma.user.findFirst({
+        where: { id: userId },
+        select: { avatar: true },
+      });
+      if (oldImage.avatar) {
+        await SojebStorage.delete(
+          appConfig().storageUrl.avatar + '/' + oldImage.avatar,
         );
-
-        data.avatar = fileName;
       }
-      const user = await this.userRepository.getUserDetails(userId);
-      if (user) {
-        await this.prisma.user.update({
-          where: { id: userId },
-          data: {
-            ...data,
-          },
-        });
 
-        return {
-          success: true,
-          message: 'User updated successfully',
-        };
-      } else {
-        return {
-          success: false,
-          message: 'User not found',
-        };
-      }
-    } catch (error) {
+      // upload file
+      const fileName = `${StringHelper.randomString()}${avatar.originalname}`;
+      await SojebStorage.put(
+        appConfig().storageUrl.avatar + fileName,
+        avatar.buffer,
+      );
+
+      data.avatar = fileName;
+    }
+    const user = await this.userRepository.getUserDetails(userId);
+    if (user) {
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: {
+          ...data,
+        },
+      });
+
+      return {
+        success: true,
+        message: 'User updated successfully',
+      };
+    } else {
       return {
         success: false,
-        message: error.message,
+        message: 'User not found',
       };
     }
   }

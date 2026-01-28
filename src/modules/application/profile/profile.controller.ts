@@ -23,7 +23,10 @@ import { Request } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { JwtAuthGuard } from 'src/modules/auth/guards/jwt-auth.guard';
-import { DiscoverProfileQueryDTO } from './dto/query-profile.dto';
+import {
+  DiscoverProfileQueryDTO,
+  PaginationDto,
+} from './dto/query-profile.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('profile')
@@ -48,6 +51,10 @@ export class ProfileController {
     return this.profileService.discoverProfile(req.user.userId, query);
   }
 
+  @Get('connections')
+  getConnections(@Req() req: Request, @Query() query: PaginationDto) {
+    return this.profileService.getConnections(req.user.userId, query);
+  }
   @Post('education')
   createEducation(
     @Body() createEducationDto: CreateEducationDto,
@@ -87,16 +94,34 @@ export class ProfileController {
   @UseInterceptors(
     FileInterceptor('file', {
       storage: memoryStorage(),
+      fileFilter: (req, file, cb) => {
+        if (!file.originalname.match(/\.(pdf)$/)) {
+          return cb(new Error('Only PDF files are allowed!'), false);
+        }
+        cb(null, true);
+      },
+      limits: {
+        fileSize: 1024 * 1024 * 5,
+      },
     }),
   )
   updateCV(@Req() req: Request, @UploadedFile() file: Express.Multer.File) {
     return this.profileService.updateCV(req.user.userId, file);
   }
 
+  @Post('report/:target_id')
+  reportUser(
+    @Req() req: Request,
+    @Param('target_id') target_id: string,
+    @Body('reason') reason?: string,
+  ) {
+    return this.profileService.reportUser(req.user.userId, target_id, reason);
+  }
   @Put('follow-toggle/:target_id')
   followToggle(@Req() req: Request, @Param('target_id') target_id: string) {
     return this.profileService.followToggle(req.user.userId, target_id);
   }
+
   @Delete('education/:id')
   deleteEducation(@Param('id') id: string, @Req() req: Request) {
     return this.profileService.deleteEducation(id, req.user.userId);

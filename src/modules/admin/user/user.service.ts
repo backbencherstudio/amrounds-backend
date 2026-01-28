@@ -6,7 +6,7 @@ import { UserRepository } from '../../../common/repository/user/user.repository'
 import appConfig from '../../../config/app.config';
 import { SojebStorage } from '../../../common/lib/Disk/SojebStorage';
 import { DateHelper } from '../../../common/helper/date.helper';
-import { GetAllUserDto } from './dto/query-user.dto';
+import { GetAllUserDto, PaginationDto } from './dto/query-user.dto';
 import { MessageGateway } from 'src/modules/chat/message/message.gateway';
 import { NotificationRepository } from 'src/common/repository/notification/notification.repository';
 
@@ -321,5 +321,43 @@ export class UserService {
     } catch (error) {
       console.log(error);
     }
+  }
+
+  async getUserReports(query: PaginationDto) {
+    const { page = 1, limit = 10 } = query;
+    const reports = await this.prisma.report.findMany({
+      select: {
+        reported: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            avatar: true,
+          },
+        },
+        reporter: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            avatar: true,
+          },
+        },
+      },
+      orderBy: { created_at: 'desc' },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+    const total = await this.prisma.report.count();
+    return {
+      success: true,
+      message: 'User reports fetched successfully',
+      data: reports,
+      meta_data: {
+        page,
+        limit,
+        total,
+      },
+    };
   }
 }

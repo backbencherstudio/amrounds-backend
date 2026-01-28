@@ -62,6 +62,19 @@ export class AuthController {
       ],
       {
         storage: memoryStorage(),
+        fileFilter: (_, file, cb) => {
+          if (!file.mimetype.match(/\/(jpg|jpeg|png)$/)) {
+            return cb(
+              new HttpException(
+                'Only PNG/JPG files are allowed',
+                HttpStatus.BAD_REQUEST,
+              ),
+              false,
+            );
+          }
+          cb(null, true);
+        },
+        limits: { fileSize: 5 * 1024 * 1024 },
       },
     ),
   )
@@ -73,78 +86,65 @@ export class AuthController {
       verification_doc?: Express.Multer.File[];
     },
   ) {
-    try {
-      const name = data.name;
-      const email = data.email;
-      const password = data.password;
-      const credentials = data.credentials;
-      const training_practice = data.training_practice;
-      const address = data.address;
-      const type = data.type;
+    const name = data.name;
+    const email = data.email;
+    const password = data.password;
+    const credentials = data.credentials;
+    const training_practice = data.training_practice;
+    const address = data.address;
+    const type = data.type;
 
-      if (!name) {
-        throw new HttpException('Name not provided', HttpStatus.UNAUTHORIZED);
-      }
-
-      if (!email) {
-        throw new HttpException('Email not provided', HttpStatus.UNAUTHORIZED);
-      }
-      if (!password) {
-        throw new HttpException(
-          'Password not provided',
-          HttpStatus.UNAUTHORIZED,
-        );
-      }
-      if (!credentials) {
-        throw new HttpException(
-          'Credentials not provided',
-          HttpStatus.UNAUTHORIZED,
-        );
-      }
-      if (!training_practice) {
-        throw new HttpException(
-          'Training practice not provided',
-          HttpStatus.UNAUTHORIZED,
-        );
-      }
-      if (!address) {
-        throw new HttpException(
-          'Address not provided',
-          HttpStatus.UNAUTHORIZED,
-        );
-      }
-
-      if (!files || !files.avatar || files.avatar.length === 0) {
-        throw new HttpException('Avatar not provided', HttpStatus.UNAUTHORIZED);
-      }
-
-      const response = await this.authService.register({
-        name: name,
-        email: email,
-        password: password,
-        credentials: credentials,
-        training_practice: training_practice,
-        address: address,
-        current_practice: data.current_practice,
-        bio: data.bio,
-        instagram: data.instagram,
-        linkedin: data.linkedin,
-        twitter_x: data.twitter_x,
-        facebook: data.facebook,
-        type: type,
-        avatar: files.avatar[0],
-        verification_doc: files.verification_doc
-          ? files.verification_doc[0]
-          : null,
-      });
-
-      return response;
-    } catch (error) {
-      return {
-        success: false,
-        message: error.message,
-      };
+    if (!name) {
+      throw new HttpException('Name not provided', HttpStatus.UNAUTHORIZED);
     }
+
+    if (!email) {
+      throw new HttpException('Email not provided', HttpStatus.UNAUTHORIZED);
+    }
+    if (!password) {
+      throw new HttpException('Password not provided', HttpStatus.UNAUTHORIZED);
+    }
+    if (!credentials) {
+      throw new HttpException(
+        'Credentials not provided',
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+    if (!training_practice) {
+      throw new HttpException(
+        'Training practice not provided',
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+    if (!address) {
+      throw new HttpException('Address not provided', HttpStatus.UNAUTHORIZED);
+    }
+
+    if (!files || !files.avatar || files.avatar.length === 0) {
+      throw new HttpException('Avatar not provided', HttpStatus.UNAUTHORIZED);
+    }
+
+    const response = await this.authService.register({
+      name: name,
+      email: email,
+      password: password,
+      credentials: credentials,
+      training_practice: training_practice,
+      address: address,
+      current_practice: data.current_practice,
+      bio: data.bio,
+      instagram: data.instagram,
+      linkedin: data.linkedin,
+      twitter_x: data.twitter_x,
+      facebook: data.facebook,
+      type: type,
+      avatar: files.avatar[0],
+      verification_doc: files.verification_doc
+        ? files.verification_doc[0]
+        : null,
+    });
+
+    return response;
   }
 
   // login user
@@ -241,35 +241,30 @@ export class AuthController {
   @Patch('update')
   @UseInterceptors(
     FileInterceptor('avatar', {
-      // storage: diskStorage({
-      //   destination:
-      //     appConfig().storageUrl.rootUrl + appConfig().storageUrl.avatar,
-      //   filename: (req, file, cb) => {
-      //     const randomName = Array(32)
-      //       .fill(null)
-      //       .map(() => Math.round(Math.random() * 16).toString(16))
-      //       .join('');
-      //     return cb(null, `${randomName}${file.originalname}`);
-      //   },
-      // }),
       storage: memoryStorage(),
+      fileFilter: (_, file, cb) => {
+        if (!file.mimetype.match(/\/(png|jpg|jpeg)$/)) {
+          return cb(
+            new HttpException(
+              'Only PNG/JPG files are allowed',
+              HttpStatus.BAD_REQUEST,
+            ),
+            false,
+          );
+        }
+        cb(null, true);
+      },
+      limits: { fileSize: 5 * 1024 * 1024 },
     }),
   )
   async updateUser(
     @Req() req: Request,
     @Body() data: UpdateUserDto,
-    @UploadedFile() avatar: Express.Multer.File,
+    @UploadedFile() avatar?: Express.Multer.File,
   ) {
-    try {
-      const user_id = req.user.userId;
-      const response = await this.authService.updateUser(user_id, data, avatar);
-      return response;
-    } catch (error) {
-      return {
-        success: false,
-        message: 'Failed to update user',
-      };
-    }
+    const userId = req.user.userId;
+
+    return this.authService.updateUser(userId, data, avatar ?? null);
   }
 
   // --------------change password---------
