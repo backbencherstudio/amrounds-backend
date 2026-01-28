@@ -15,10 +15,16 @@ import { SojebStorage } from 'src/common/lib/Disk/SojebStorage';
 import appConfig from 'src/config/app.config';
 import { Prisma } from 'prisma/generated/client';
 import { DiscoverProfileQueryDTO } from './dto/query-profile.dto';
+import { NotificationRepository } from 'src/common/repository/notification/notification.repository';
+import { MessageGateway } from 'src/modules/chat/message/message.gateway';
 
 @Injectable()
 export class ProfileService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private notificationRepository: NotificationRepository,
+    private messageGateway: MessageGateway,
+  ) {}
 
   async getProfileStats(user_id: string) {
     const [totalTest, totalCompletedTest, totalScore] =
@@ -370,12 +376,21 @@ export class ProfileService {
         },
       },
     });
+
     if (follow) {
       await this.prisma.follow.delete({
         where: {
           id: follow.id,
         },
       });
+
+      // delete notification
+      await this.notificationRepository.deleteNotification({
+        sender_id: user_id,
+        receiver_id: target_id,
+        type: 'follow',
+      });
+
       return {
         success: true,
         message: 'Unfollowed successfully',
@@ -387,6 +402,36 @@ export class ProfileService {
         following_id: target_id,
       },
     });
+
+    const user = await this.prisma.user.findUnique({
+      where: {
+        id: user_id,
+      },
+      select: {
+        name: true,
+        avatar: true,
+      },
+    });
+
+    const followNotificationPayload: any = {
+      sender_id: user_id,
+      receiver_id: target_id,
+      message: user?.name + ' Followed you',
+      type: 'follow',
+    };
+
+    const userSocketId = this.messageGateway.clients.get(target_id);
+
+    if (userSocketId) {
+      this.messageGateway.server
+        .to(userSocketId)
+        .emit('follow', followNotificationPayload);
+    }
+
+    await this.notificationRepository.createNotification(
+      followNotificationPayload,
+    );
+
     return {
       success: true,
       message: 'Followed successfully',

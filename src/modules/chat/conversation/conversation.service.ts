@@ -14,12 +14,12 @@ export class ConversationService {
     private readonly messageGateway: MessageGateway,
   ) {}
 
-  async create(createConversationDto: CreateConversationDto) {
+  async create(user_id: string, createConversationDto: CreateConversationDto) {
     try {
       const data: any = {};
 
-      if (createConversationDto.creator_id) {
-        data.creator_id = createConversationDto.creator_id;
+      if (user_id) {
+        data.creator_id = user_id;
       }
       if (createConversationDto.participant_id) {
         data.participant_id = createConversationDto.participant_id;
@@ -65,7 +65,27 @@ export class ConversationService {
         },
       });
 
+      console.log(conversation.creator.avatar);
+
+      const addAvatarUrl = (conv) => {
+        if (conv.creator.avatar) {
+          Object.assign(conv.creator, {
+            avatar_url: SojebStorage.url(
+              appConfig().storageUrl.avatar + conv.creator.avatar,
+            ),
+          });
+        }
+        if (conv.participant.avatar) {
+          Object.assign(conv.participant, {
+            avatar_url: SojebStorage.url(
+              appConfig().storageUrl.avatar + conv.participant.avatar,
+            ),
+          });
+        }
+      };
+
       if (conversation) {
+        addAvatarUrl(conversation);
         return {
           success: false,
           message: 'Conversation already exists',
@@ -112,16 +132,7 @@ export class ConversationService {
       });
 
       // add image url
-      if (conversation.creator.avatar) {
-        conversation.creator['avatar_url'] = SojebStorage.url(
-          appConfig().storageUrl.avatar + conversation.creator.avatar,
-        );
-      }
-      if (conversation.participant.avatar) {
-        conversation.participant['avatar_url'] = SojebStorage.url(
-          appConfig().storageUrl.avatar + conversation.participant.avatar,
-        );
-      }
+      addAvatarUrl(conversation);
 
       // trigger socket event
       this.messageGateway.server.to(data.creator_id).emit('conversation', {
@@ -146,11 +157,14 @@ export class ConversationService {
     }
   }
 
-  async findAll() {
+  async findAll(user_id: string) {
     try {
       const conversations = await this.prisma.conversation.findMany({
         orderBy: {
           updated_at: 'desc',
+        },
+        where: {
+          OR: [{ creator_id: user_id }, { participant_id: user_id }],
         },
         select: {
           id: true,
@@ -212,10 +226,13 @@ export class ConversationService {
     }
   }
 
-  async findOne(id: string) {
+  async findOne(user_id: string, id: string) {
     try {
       const conversation = await this.prisma.conversation.findUnique({
-        where: { id },
+        where: {
+          id,
+          OR: [{ creator_id: user_id }, { participant_id: user_id }],
+        },
         select: {
           id: true,
           creator_id: true,
@@ -245,6 +262,11 @@ export class ConversationService {
           appConfig().storageUrl.avatar + conversation.creator.avatar,
         );
       }
+      if (conversation.participant.avatar) {
+        conversation.participant['avatar_url'] = SojebStorage.url(
+          appConfig().storageUrl.avatar + conversation.participant.avatar,
+        );
+      }
 
       return {
         success: true,
@@ -261,8 +283,8 @@ export class ConversationService {
   async update(id: string, updateConversationDto: UpdateConversationDto) {
     try {
       const data = {};
-      if (updateConversationDto.creator_id) {
-        data['creator_id'] = updateConversationDto.creator_id;
+      if (id) {
+        data['creator_id'] = id;
       }
       if (updateConversationDto.participant_id) {
         data['participant_id'] = updateConversationDto.participant_id;
@@ -288,8 +310,22 @@ export class ConversationService {
     }
   }
 
-  async remove(id: string) {
+  async remove(user_id: string, id: string) {
     try {
+      const conversation = await this.prisma.conversation.findUnique({
+        where: {
+          id,
+          OR: [{ creator_id: user_id }, { participant_id: user_id }],
+        },
+      });
+
+      if (!conversation) {
+        return {
+          success: false,
+          message: 'Conversation not found',
+        };
+      }
+
       await this.prisma.conversation.delete({
         where: { id },
       });
