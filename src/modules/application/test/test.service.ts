@@ -765,4 +765,173 @@ export class TestService {
       },
     };
   }
+
+  async getTestDetails(user_id: string, test_id: string) {
+    try {
+      const test = await this.prisma.test.findUnique({
+        where: {
+          id: test_id,
+          user_id,
+        },
+        select: {
+          id: true,
+          created_at: true,
+          test_mode: true,
+          difficulty: true,
+          topic: true,
+          total_questions: true,
+          score: true,
+          is_completed: true,
+          questions: {
+            select: {
+              id: true,
+              question_steam: true,
+              question_title: true,
+              explanation: true,
+              explanation_image: true,
+              why_incorrect: true,
+              pimping_point: true,
+              memory_trick: true,
+              referance: true,
+              answerOptions: {
+                select: {
+                  id: true,
+                  option_text: true,
+                  is_correct: true,
+                },
+              },
+              topic: true,
+              difficulty: true,
+            },
+          },
+          user_answers: {
+            select: {
+              question_id: true,
+              selected_option_id: true,
+            },
+          },
+        },
+      });
+
+      if (!test) {
+        throw new Error('Test not found');
+      }
+
+      // 1. Map user's selected options
+      const userAnswerMap = new Map<string, string>();
+      test.user_answers.forEach((ans) => {
+        if (ans.selected_option_id) {
+          userAnswerMap.set(ans.question_id, ans.selected_option_id);
+        }
+      });
+
+      // 2. Get Statistics for all questions in this test
+      const questionIds = test.questions.map((q) => q.id);
+
+      const answerStats = await this.prisma.userAnswer.groupBy({
+        by: ['question_id', 'selected_option_id'],
+        where: {
+          question_id: { in: questionIds },
+          selected_option_id: { not: null },
+        },
+        _count: {
+          selected_option_id: true,
+        },
+      });
+
+      // Process stats: Calculate total answers per question
+      const questionTotalAnswers = new Map<string, number>();
+      const optionCounts = new Map<string, number>();
+
+      answerStats.forEach((stat) => {
+        const qId = stat.question_id;
+        const oId = stat.selected_option_id;
+        const count = stat._count.selected_option_id;
+
+        const currentTotal = questionTotalAnswers.get(qId) || 0;
+        questionTotalAnswers.set(qId, currentTotal + count);
+
+        optionCounts.set(oId!, count);
+      });
+
+      // 3. Merge data
+      const questionsWithDetails = test.questions.map((question) => {
+        const totalAnswersForQuestion =
+          questionTotalAnswers.get(question.id) || 0;
+
+        const answerOptionsWithStats = question.answerOptions.map((option) => {
+          const count = optionCounts.get(option.id) || 0;
+          const percentage =
+            totalAnswersForQuestion > 0
+              ? (count / totalAnswersForQuestion) * 100
+              : 0;
+          return {
+            ...option,
+            total_select: Math.round(percentage),
+          };
+        });
+
+        let explanation_image_url = null;
+        let processedExplanation = question.explanation;
+
+        if (question.explanation_image) {
+          if (question.explanation_image.startsWith('http')) {
+            explanation_image_url = question.explanation_image;
+          } else {
+            explanation_image_url = SojebStorage.url(
+              appConfig().storageUrl.question + question.explanation_image,
+            );
+          }
+
+          if (processedExplanation) {
+            const escapedFileName = question.explanation_image.replace(
+              /[.*+?^${}()|[\]\\]/g,
+              '\\$&',
+            );
+            const regex = new RegExp(
+              `(src=['"])([^'"]*${escapedFileName})(['"])`,
+              'g',
+            );
+            processedExplanation = processedExplanation.replace(
+              regex,
+              (match, p1, p2, p3) => {
+                if (p2.startsWith('http')) {
+                  return match;
+                }
+                return `${p1}${explanation_image_url}${p3}`;
+              },
+            );
+          }
+        }
+
+        return {
+          ...question,
+          explanation: processedExplanation,
+          explanation_image_url,
+          answerOptions: answerOptionsWithStats,
+          user_selected_option_id: userAnswerMap.get(question.id) || null,
+        };
+      });
+
+      // Construct final response, excluding the raw user_answers array if desired,
+      // but we need to return the modified questions array.
+      // We'll return a new object spreading the test properties but replacing questions.
+
+      const { questions, user_answers, ...testDetails } = test;
+
+      return {
+        success: true,
+        message: 'Test details retrieved successfully',
+        data: {
+          ...testDetails,
+          questions: questionsWithDetails,
+        },
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.message || 'Failed to retrieve test details',
+      };
+    }
+  }
 }
