@@ -375,17 +375,35 @@ export class ProfileService {
     }
 
     const { _count, ...rest } = user;
+
+    if (user.type == 'admin') {
+      return {
+        success: true,
+        message: 'Profile fetched successfully',
+        data: {
+          name: rest.name,
+          email: rest.email,
+          facebook: rest.facebook,
+          linkedin: rest.linkedin,
+          twitter_x: rest.twitter_x,
+          instagram: rest.instagram,
+          website_notification: rest.website_notification,
+          email_notification: rest.email_notification,
+          avatar: rest.avatar
+            ? `${appConfig().storageUrl.avatar}/${rest.avatar}`
+            : null,
+        },
+      };
+    }
     return {
       success: true,
       message: 'Profile fetched successfully',
       data: {
         ...rest,
         avatar: rest.avatar
-          ? `${SojebStorage.url(appConfig().storageUrl.avatar)}/${rest.avatar}`
+          ? `${appConfig().storageUrl.avatar}/${rest.avatar}`
           : null,
-        cv: rest.cv
-          ? `${SojebStorage.url(appConfig().storageUrl.cv)}/${rest.cv}`
-          : null,
+        cv: rest.cv ? `${appConfig().storageUrl.cv}/${rest.cv}` : null,
         followings: _count.followings,
         followers: _count.followers,
       },
