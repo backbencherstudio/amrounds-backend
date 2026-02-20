@@ -146,6 +146,40 @@ export class QuestionsService {
         this.prisma.questions.count({ where }),
       ]);
 
+      const questionIds = questions.map((q) => q.id);
+
+      const userAnswersGrouped = await this.prisma.userAnswer.groupBy({
+        by: ['question_id', 'is_correct'],
+        where: {
+          question_id: {
+            in: questionIds,
+          },
+        },
+        _count: {
+          _all: true,
+        },
+      });
+
+      const questionsWithStats = questions.map((question) => {
+        const stats = userAnswersGrouped.filter(
+          (ua) => ua.question_id === question.id,
+        );
+        const totalAttempts = stats.reduce(
+          (acc, curr) => acc + curr._count._all,
+          0,
+        );
+        const correctAttempts =
+          stats.find((ua) => ua.is_correct === true)?._count._all || 0;
+        const correctPercentage =
+          totalAttempts > 0 ? (correctAttempts / totalAttempts) * 100 : 0;
+
+        return {
+          ...question,
+          correct_percentage: parseFloat(correctPercentage.toFixed(2)),
+          total_attempts: totalAttempts,
+        };
+      });
+
       const totalPage = Math.ceil(total / limit);
       const next = page < totalPage ? page + 1 : null;
       const previous = page > 1 ? page - 1 : null;
@@ -153,7 +187,7 @@ export class QuestionsService {
       return {
         success: true,
         message: 'Questions fetched successfully',
-        data: questions,
+        data: questionsWithStats,
         meta: {
           total,
           page,
