@@ -318,6 +318,7 @@ export class ProfileService {
         type: true,
         cv: true,
         is_public: true,
+        created_at: true,
         email_notification: true,
         website_notification: true,
         educations: {
@@ -387,8 +388,8 @@ export class ProfileService {
           linkedin: rest.linkedin,
           twitter_x: rest.twitter_x,
           instagram: rest.instagram,
-          website_notification: rest.website_notification,
-          email_notification: rest.email_notification,
+          join_date: rest.created_at,
+          bio: rest.bio,
           avatar: rest.avatar
             ? `${appConfig().storageUrl.avatar}/${rest.avatar}`
             : null,
