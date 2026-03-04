@@ -65,8 +65,6 @@ export class ConversationService {
         },
       });
 
-      console.log(conversation.creator.avatar);
-
       const addAvatarUrl = (conv) => {
         if (conv.creator.avatar) {
           Object.assign(conv.creator, {
