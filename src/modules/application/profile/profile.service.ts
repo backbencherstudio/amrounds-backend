@@ -84,6 +84,7 @@ export class ProfileService {
     if (!currentUser) {
       throw new NotFoundException('Current user not found');
     }
+
     const delimiter = '<->';
     const joinForSql = (arr: string[]) => arr.join(delimiter);
 
@@ -114,7 +115,9 @@ export class ProfileService {
 
     const searchTerm = search || '';
 
-    const users: any[] = await this.prisma.$queryRaw`
+    const [users, totalCount, following] = await Promise.all([
+      // Main query for users
+      this.prisma.$queryRaw<any[]>`
       SELECT 
         u.id, 
         u.name, 
@@ -234,13 +237,51 @@ export class ProfileService {
         suggestion_rank DESC
       LIMIT ${limit}
       OFFSET ${offset}
-    `;
+    `,
+
+      // Count total matching users (without pagination)
+      this.prisma.$queryRaw<[{ count: string }]>`
+      SELECT COUNT(*)::text as count
+      FROM users u
+      WHERE u.id != ${user_id}
+      AND u.is_public = true 
+      AND u.status = 1
+      AND u.type != 'admin'
+      AND NOT (u.approved = false AND u.approved_at IS NULL)
+      ${
+        searchTerm
+          ? Prisma.sql`AND (
+            u.name ILIKE ${'%' + searchTerm + '%'} 
+            OR u.username ILIKE ${'%' + searchTerm + '%'}
+            OR u.bio ILIKE ${'%' + searchTerm + '%'}
+          )`
+          : Prisma.sql``
+      }
+    `,
+      this.prisma.follow.findMany({
+        where: {
+          follower_id: user_id,
+        },
+        select: {
+          following_id: true,
+        },
+      }),
+    ]);
+
+    const total = parseInt(totalCount[0]?.count || '0');
+
     return {
       success: true,
-      data: users,
-      meta: {
+      data: users.map((user) => {
+        return {
+          ...user,
+          is_following: following.some((f) => f.following_id === user.id),
+        };
+      }),
+      meta_data: {
         page: Number(page),
         limit: Number(limit),
+        total: total,
       },
     };
   }
