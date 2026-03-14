@@ -76,9 +76,11 @@ export class QuestionsService {
       };
     } catch (error) {
       console.error(error);
+
       return {
         success: false,
         message: 'Failed to create question',
+        error: error.message,
       };
     }
   }
