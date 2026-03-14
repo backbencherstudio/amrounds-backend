@@ -37,7 +37,8 @@ export class QuestionsController {
     FileInterceptor('explanation_image', {
       storage: memoryStorage(),
       limits: {
-        fileSize: 10 * 1024 * 1024,
+        fileSize: 15 * 1024 * 1024,
+        fieldSize: 15 * 1024 * 1024,
       },
       fileFilter: (req, file, cb) => {
         if (!file.mimetype.match(/\/(jpg|jpeg|png|gif)$/)) {
@@ -87,6 +88,7 @@ export class QuestionsController {
       storage: memoryStorage(),
       limits: {
         fileSize: 10 * 1024 * 1024,
+        fieldSize: 10 * 1024 * 1024,
       },
       fileFilter: (req, file, cb) => {
         if (!file.mimetype.match(/\/(jpg|jpeg|png|gif)$/)) {
