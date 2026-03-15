@@ -219,6 +219,7 @@ export class TestService {
             select: {
               id: true,
               option_text: true,
+              is_correct: true,
             },
           },
         },
