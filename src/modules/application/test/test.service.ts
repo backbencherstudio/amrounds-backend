@@ -219,6 +219,7 @@ export class TestService {
             select: {
               id: true,
               option_text: true,
+              is_correct: true,
             },
           },
         },
@@ -293,6 +294,7 @@ export class TestService {
         message: 'Answer submitted successfully',
         data: {
           is_correct,
+          selected_option_id: userAnswer.selected_option_id,
           user_answer_id: userAnswer.id,
           explanation_image_url,
           ...question,
