@@ -96,7 +96,7 @@ export class AuthController {
     const credentials = data.credentials;
     const training_practice = data.training_practice;
     const address = data.address;
-    const type = data.type;
+    const type = 'user'; // Force default type to user
 
     if (!name) {
       throw new HttpException('Name not provided', HttpStatus.UNAUTHORIZED);
