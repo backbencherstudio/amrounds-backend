@@ -23,7 +23,11 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
 
   app.enableCors({
-    origin: ['http://localhost:3000', '*'],
+    origin: [
+      'https://tablerounds.ai',
+      'http://localhost:3000',
+      'http://localhost:3001',
+    ], // Added tablerounds.ai and common local ports,
     credentials: true,
   });
   app.use(
