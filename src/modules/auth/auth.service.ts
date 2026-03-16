@@ -519,22 +519,22 @@ export class AuthService {
       }
 
       // create stripe customer account
-      const stripeCustomer = await StripePayment.createCustomer({
-        user_id: user.data.id,
-        email: email,
-        name: name,
-      });
+      // const stripeCustomer = await StripePayment.createCustomer({
+      //   user_id: user.data.id,
+      //   email: email,
+      //   name: name,
+      // });
 
-      if (stripeCustomer) {
-        await this.prisma.user.update({
-          where: {
-            id: user.data.id,
-          },
-          data: {
-            billing_id: stripeCustomer.id,
-          },
-        });
-      }
+      // if (stripeCustomer) {
+      //   await this.prisma.user.update({
+      //     where: {
+      //       id: user.data.id,
+      //     },
+      //     data: {
+      //       billing_id: stripeCustomer.id,
+      //     },
+      //   });
+      // }
 
       // ----------------------------------------------------
       // // create otp code
