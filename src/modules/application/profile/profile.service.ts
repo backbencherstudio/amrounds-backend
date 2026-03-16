@@ -432,7 +432,7 @@ export class ProfileService {
           join_date: rest.created_at,
           bio: rest.bio,
           avatar: rest.avatar
-            ? `${appConfig().storageUrl.avatar}/${rest.avatar}`
+            ? SojebStorage.url(`${appConfig().storageUrl.avatar}${rest.avatar}`)
             : null,
         },
       };
@@ -443,9 +443,11 @@ export class ProfileService {
       data: {
         ...rest,
         avatar: rest.avatar
-          ? `${appConfig().storageUrl.avatar}/${rest.avatar}`
+          ? SojebStorage.url(`${appConfig().storageUrl.avatar}/${rest.avatar}`)
           : null,
-        cv: rest.cv ? `${appConfig().storageUrl.cv}/${rest.cv}` : null,
+        cv: rest.cv
+          ? SojebStorage.url(`${appConfig().storageUrl.cv}/${rest.cv}`)
+          : null,
         followings: _count.followings,
         followers: _count.followers,
       },
