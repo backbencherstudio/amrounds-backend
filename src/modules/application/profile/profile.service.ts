@@ -275,6 +275,11 @@ export class ProfileService {
       data: users.map((user) => {
         return {
           ...user,
+          avatar: user.avatar
+            ? SojebStorage.url(
+                `${appConfig().storageUrl.avatar}/${user.avatar}`,
+              )
+            : null,
           is_following: following.some((f) => f.following_id === user.id),
         };
       }),
@@ -322,10 +327,18 @@ export class ProfileService {
     return {
       success: true,
       data: connections.map((connection) => {
-        if (connection.follower_id === user_id) {
-          return connection.following;
-        }
-        return connection.follower;
+        let userNode =
+          connection.follower_id === user_id
+            ? connection.following
+            : connection.follower;
+        return {
+          ...userNode,
+          avatar: userNode.avatar
+            ? SojebStorage.url(
+                `${appConfig().storageUrl.avatar}/${userNode.avatar}`,
+              )
+            : null,
+        };
       }),
       meta_data: {
         page: Number(page),
