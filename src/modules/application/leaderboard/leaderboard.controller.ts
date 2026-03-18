@@ -17,6 +17,7 @@ export class LeaderboardController {
 
     return this.leaderboardService.getLeaderboard(targetUserId, query);
   }
+
   @Get('map-data')
   getMapData() {
     return this.leaderboardService.getMapData();
