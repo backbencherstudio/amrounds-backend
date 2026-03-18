@@ -24,6 +24,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { JwtAuthGuard } from 'src/modules/auth/guards/jwt-auth.guard';
 import {
+  ConnectionsQueryDTO,
   DiscoverProfileQueryDTO,
   PaginationDto,
 } from './dto/query-profile.dto';
@@ -52,7 +53,7 @@ export class ProfileController {
   }
 
   @Get('connections')
-  getConnections(@Req() req: Request, @Query() query: PaginationDto) {
+  getConnections(@Req() req: Request, @Query() query: ConnectionsQueryDTO) {
     return this.profileService.getConnections(req.user.userId, query);
   }
   @Post('education')
