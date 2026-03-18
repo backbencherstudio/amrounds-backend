@@ -16,7 +16,9 @@ import { SojebStorage } from 'src/common/lib/Disk/SojebStorage';
 import appConfig from 'src/config/app.config';
 import { Prisma } from 'prisma/generated/client';
 import {
+  ConnectionsQueryDTO,
   DiscoverProfileQueryDTO,
+  DiscoverProfileType,
   PaginationDto,
 } from './dto/query-profile.dto';
 import { NotificationRepository } from 'src/common/repository/notification/notification.repository';
@@ -291,13 +293,19 @@ export class ProfileService {
     };
   }
 
-  async getConnections(user_id: string, query: PaginationDto) {
-    const { page = 1, limit = 10 } = query;
+  async getConnections(user_id: string, query: ConnectionsQueryDTO) {
+    const { page = 1, limit = 10, type = DiscoverProfileType.All } = query;
 
+    const where: Prisma.FollowWhereInput = {};
+    if (type === DiscoverProfileType.Following) {
+      where.follower_id = user_id;
+    } else if (type === DiscoverProfileType.Follower) {
+      where.following_id = user_id;
+    } else {
+      where.OR = [{ following_id: user_id }, { follower_id: user_id }];
+    }
     const connections = await this.prisma.follow.findMany({
-      where: {
-        OR: [{ following_id: user_id }, { follower_id: user_id }],
-      },
+      where,
       include: {
         follower: {
           select: {
@@ -324,6 +332,9 @@ export class ProfileService {
       skip: (page - 1) * limit,
       take: limit,
     });
+    const total = await this.prisma.follow.count({
+      where,
+    });
     return {
       success: true,
       data: connections.map((connection) => {
@@ -343,6 +354,8 @@ export class ProfileService {
       meta_data: {
         page: Number(page),
         limit: Number(limit),
+        total: total,
+        type,
       },
     };
   }
