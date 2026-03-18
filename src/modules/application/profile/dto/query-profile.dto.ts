@@ -1,5 +1,5 @@
 import { Transform } from 'class-transformer';
-import { IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class PaginationDto {
   @IsOptional()
@@ -11,6 +11,18 @@ export class PaginationDto {
   @Transform(({ value }) => (value ? Number(value) : 10))
   @IsNumber()
   limit?: number = 10;
+}
+
+export enum DiscoverProfileType {
+  All = 'all',
+  Following = 'following',
+  Follower = 'follower',
+}
+
+export class ConnectionsQueryDTO extends PaginationDto {
+  @IsOptional()
+  @IsEnum(DiscoverProfileType)
+  type?: DiscoverProfileType = DiscoverProfileType.All;
 }
 
 export class DiscoverProfileQueryDTO extends PaginationDto {
