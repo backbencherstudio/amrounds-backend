@@ -20,12 +20,12 @@ import { Request } from 'express';
 
 @ApiBearerAuth()
 @ApiTags('Help')
-@UseGuards(JwtAuthGuard)
-@Roles(Role.ADMIN)
 @Controller('admin/help')
 export class HelpController {
   constructor(private readonly helpService: HelpService) {}
 
+  @UseGuards(JwtAuthGuard)
+  @Roles(Role.ADMIN)
   @Patch()
   createSupport(@Req() req: Request, @Body() createHelpDto: CreateHelpDto) {
     const userId = req.user.userId;
@@ -37,6 +37,8 @@ export class HelpController {
     return this.helpService.findAllSupport();
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Roles(Role.ADMIN)
   @Delete(':id')
   deleteSupport(@Param('id') id: string) {
     return this.helpService.deleteSupport(id);
