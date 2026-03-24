@@ -44,6 +44,7 @@ export class UserService {
 
   async findAll(query: GetAllUserDto) {
     try {
+      const { page = 1, limit = 10 } = query;
       const where_condition = {};
       if (query.search) {
         where_condition['OR'] = [
@@ -91,11 +92,20 @@ export class UserService {
           created_at: true,
           updated_at: true,
         },
+        skip: (page - 1) * limit,
+        take: limit,
       });
+
+      const total = await this.prisma.user.count({ where: where_condition });
 
       return {
         success: true,
         data: users,
+        meta_data: {
+          page,
+          limit,
+          total,
+        },
       };
     } catch (error) {
       return {
