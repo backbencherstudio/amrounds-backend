@@ -45,10 +45,9 @@ export default () => ({
     secret: process.env.JWT_SECRET,
     expiry: process.env.JWT_EXPIRY,
   },
-
   mail: {
     host: process.env.MAIL_HOST || 'smtp.gmail.com',
-    port: process.env.MAIL_PORT || 587,
+    port: parseInt(process.env.MAIL_PORT, 10) || 587,
     user: process.env.MAIL_USERNAME,
     password: process.env.MAIL_PASSWORD,
     from: process.env.MAIL_FROM_ADDRESS,

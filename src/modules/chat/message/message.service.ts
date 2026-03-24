@@ -10,6 +10,7 @@ import { MessageGateway } from './message.gateway';
 import { UserRepository } from '../../../common/repository/user/user.repository';
 import { Role } from '../../../common/guard/role/role.enum';
 import { MessageStatus } from 'prisma/generated/enums';
+import { CreateAdminMessageDto } from './dto/create-admin-message.dto';
 
 @Injectable()
 export class MessageService {
@@ -113,6 +114,144 @@ export class MessageService {
       // this.messageGateway.server
       //   .to(this.messageGateway.clients.get(data.receiver_id))
       //   .emit('message', { from: data.receiver_id, data: message });
+
+      return {
+        success: true,
+        data: {
+          ...message,
+          attachments,
+        },
+        message: 'Message sent successfully',
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
+  }
+
+  async postMessageToAdmin(
+    user_id: string,
+    createAdminMessageDto: CreateAdminMessageDto,
+    files?: Array<Express.Multer.File>,
+  ) {
+    try {
+      const data: any = {};
+
+      if (createAdminMessageDto.conversation_id) {
+        data.conversation_id = createAdminMessageDto.conversation_id;
+      }
+
+      if (createAdminMessageDto.receiver_id) {
+        data.receiver_id = createAdminMessageDto.receiver_id;
+      }
+
+      if (createAdminMessageDto.message) {
+        data.message = createAdminMessageDto.message;
+      }
+
+      // check if conversation exists
+      const conversation = await this.prisma.conversation.findFirst({
+        where: {
+          id: data.conversation_id,
+        },
+      });
+
+      if (!conversation) {
+        return {
+          success: false,
+          message: 'Conversation not found',
+        };
+      }
+
+      // If receiver_id is provided, check if receiver exists
+      if (data.receiver_id) {
+        const receiver = await this.prisma.user.findFirst({
+          where: {
+            id: data.receiver_id,
+          },
+        });
+
+        if (!receiver) {
+          return {
+            success: false,
+            message: 'Receiver not found',
+          };
+        }
+      }
+
+      const message = await this.prisma.message.create({
+        data: {
+          ...data,
+          status: MessageStatus.SENT,
+          sender_id: user_id,
+        },
+      });
+
+      const attachments = [];
+      if (files && files.length > 0) {
+        for (const file of files) {
+          const fileName = `${DateHelper.now().getTime()}_${file.originalname}`;
+          await SojebStorage.put(
+            appConfig().storageUrl.attachment + '/' + fileName,
+            file.buffer,
+          );
+          const attachment = await this.prisma.attachment.create({
+            data: {
+              name: fileName,
+              type: file.mimetype,
+              size: file.size,
+              file: fileName,
+              message_id: message.id,
+            },
+          });
+          attachment['file_url'] = SojebStorage.url(
+            appConfig().storageUrl.attachment + '/' + fileName,
+          );
+          attachments.push(attachment);
+        }
+      }
+
+      // update conversation updated_at
+      await this.prisma.conversation.update({
+        where: {
+          id: data.conversation_id,
+        },
+        data: {
+          updated_at: DateHelper.now(),
+        },
+      });
+
+      // Broadcast to all admins if receiver_id wasn't provided!
+      if (!data.receiver_id) {
+        const messageData = {
+          message: {
+            id: message.id,
+            message_id: message.id,
+            body_text: message.message,
+            from: message.sender_id,
+            conversation_id: message.conversation_id,
+            created_at: message.created_at,
+            attachments: attachments,
+          },
+        };
+
+        const admins = await this.prisma.user.findMany({
+          where: { type: Role.ADMIN, id: { not: user_id } },
+          select: { id: true },
+        });
+
+        for (const admin of admins) {
+          const socketId = this.messageGateway.clients.get(admin.id);
+          if (socketId) {
+            this.messageGateway.server.to(socketId).emit('message', {
+              from: user_id,
+              data: messageData,
+            });
+          }
+        }
+      }
 
       return {
         success: true,

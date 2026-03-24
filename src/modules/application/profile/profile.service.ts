@@ -449,6 +449,7 @@ export class ProfileService {
         success: true,
         message: 'Profile fetched successfully',
         data: {
+          id: rest.id,
           name: rest.name,
           email: rest.email,
           facebook: rest.facebook,

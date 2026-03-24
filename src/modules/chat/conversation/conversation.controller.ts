@@ -20,11 +20,11 @@ import { Request } from 'express';
 @ApiBearerAuth()
 @ApiTags('Conversation')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(Role.USER)
 @Controller('chat/conversation')
 export class ConversationController {
   constructor(private readonly conversationService: ConversationService) {}
 
+  @Roles(Role.USER)
   @ApiOperation({ summary: 'Create conversation' })
   @Post()
   async create(
@@ -32,7 +32,7 @@ export class ConversationController {
     @Body() createConversationDto: CreateConversationDto,
   ) {
     try {
-      console.log(req.user.userId);
+      // console.log(req.user.userId);
       const conversation = await this.conversationService.create(
         req.user.userId,
         createConversationDto,
@@ -46,7 +46,7 @@ export class ConversationController {
     }
   }
 
-  // @Roles(Role.ADMIN)
+  // @Roles(Role.USER)
   @ApiOperation({ summary: 'Get all conversations' })
   @Get()
   async findAll(@Req() req: Request) {
@@ -63,6 +63,7 @@ export class ConversationController {
     }
   }
 
+  // @Roles(Role.USER)
   @ApiOperation({ summary: 'Get a conversation by id' })
   @Get(':id')
   async findOne(@Req() req: Request, @Param('id') id: string) {
@@ -80,6 +81,7 @@ export class ConversationController {
     }
   }
 
+  // @Roles(Role.USER)
   @ApiOperation({ summary: 'Delete a conversation' })
   @Delete(':id')
   async remove(@Req() req: Request, @Param('id') id: string) {
@@ -88,6 +90,23 @@ export class ConversationController {
         req.user.userId,
         id,
       );
+      return conversation;
+    } catch (error) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
+  }
+
+  // user create a conversation with admins
+  // @Roles(Role.USER)
+  @ApiOperation({ summary: 'User create a conversation with all admins' })
+  @Post('admin')
+  async createAdminConversation(@Req() req: Request) {
+    try {
+      const conversation =
+        await this.conversationService.createAdminConversation(req.user.userId);
       return conversation;
     } catch (error) {
       return {
