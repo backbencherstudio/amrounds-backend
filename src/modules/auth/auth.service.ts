@@ -434,7 +434,7 @@ export class AuthService {
       if (userEmailExist) {
         return {
           statusCode: 401,
-          message: 'Email already exist',
+          message: 'Email already exists',
         };
       }
 
