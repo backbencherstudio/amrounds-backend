@@ -367,7 +367,7 @@ export class UserRepository {
         if (userEmailExist) {
           return {
             success: false,
-            message: 'Email already exist',
+            message: 'Email already exists',
           };
         }
         data['email'] = email;
