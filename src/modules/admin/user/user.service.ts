@@ -84,6 +84,7 @@ export class UserService {
           name: true,
           email: true,
           phone_number: true,
+          avatar: true,
           address: true,
           type: true,
           approved_at: true,
@@ -97,6 +98,14 @@ export class UserService {
       });
 
       const total = await this.prisma.user.count({ where: where_condition });
+
+      users.forEach((user) => {
+        if (user.avatar) {
+          user['avatar_url'] = SojebStorage.url(
+            appConfig().storageUrl.avatar + user.avatar,
+          );
+        }
+      });
 
       return {
         success: true,
