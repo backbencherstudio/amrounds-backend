@@ -75,9 +75,9 @@ export class AuthController {
           }
           cb(null, true);
         },
-        limits: { 
+        limits: {
           fileSize: 15 * 1024 * 1024, // 15 MB
-          fieldSize: 50 * 1024 * 1024 // 50 MB
+          fieldSize: 50 * 1024 * 1024, // 50 MB
         },
       },
     ),
@@ -293,7 +293,7 @@ export class AuthController {
   // verify email to verify the email
   @ApiOperation({ summary: 'Verify email' })
   @Get('verify-email')
-  async verifyEmail(@Query() data: VerifyEmailDto) {
+  async verifyEmail(@Query() data: VerifyEmailDto, @Res() res: Response) {
     try {
       const email = data.email;
       const token = data.token;
@@ -303,15 +303,16 @@ export class AuthController {
       if (!token) {
         throw new HttpException('Token not provided', HttpStatus.UNAUTHORIZED);
       }
-      return await this.authService.verifyEmail({
+      await this.authService.verifyEmail({
         email: email,
         token: token,
       });
+      return res.redirect('https://tablerounds.ai/login');
     } catch (error) {
-      return {
+      return res.status(error.status || HttpStatus.BAD_REQUEST).json({
         success: false,
         message: 'Failed to verify email',
-      };
+      });
     }
   }
 
