@@ -103,10 +103,16 @@ export class ConversationController {
   // @Roles(Role.USER)
   @ApiOperation({ summary: 'User create a conversation with all admins' })
   @Post('admin')
-  async createAdminConversation(@Req() req: Request) {
+  async createAdminConversation(
+    @Req() req: Request,
+    @Body() body?: { participant_id?: string },
+  ) {
     try {
       const conversation =
-        await this.conversationService.createAdminConversation(req.user.userId);
+        await this.conversationService.createAdminConversation(
+          req.user.userId,
+          body?.participant_id,
+        );
       return conversation;
     } catch (error) {
       return {
