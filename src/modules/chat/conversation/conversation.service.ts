@@ -398,7 +398,7 @@ export class ConversationService {
       };
 
       // Determine the participant
-      let targetParticipantId = participant_id || null;
+      let targetParticipantId = participant_id || admins[0].id;
 
       let conversation = await this.prisma.conversation.findFirst({
         select: {

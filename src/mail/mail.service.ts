@@ -78,6 +78,7 @@ export class MailService {
       console.log(error);
     }
   }
+
   async sendContactNotification({ adminEmail, contact }) {
     try {
       const from = `${process.env.APP_NAME} <${appConfig().mail.from}>`;

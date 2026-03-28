@@ -52,8 +52,8 @@ export class CreateAnswerOptionsDto {
 
 export class CreateQuestionDto {
   @IsString()
-  @IsNotEmpty()
-  question_title: string;
+  @IsOptional()
+  question_title?: string;
 
   @IsString()
   @IsNotEmpty()
