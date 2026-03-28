@@ -158,18 +158,23 @@ export class ConversationService {
 
   async findAll(user_id: string) {
     try {
-      const user = await this.prisma.user.findUnique({ where: { id: user_id } });
+      const user = await this.prisma.user.findUnique({
+        where: { id: user_id },
+      });
       const isAdmin = user?.type === Role.ADMIN;
-      
+
       let adminIds = [];
       if (isAdmin) {
-        const admins = await this.prisma.user.findMany({ where: { type: Role.ADMIN }, select: { id: true } });
-        adminIds = admins.map(a => a.id);
+        const admins = await this.prisma.user.findMany({
+          where: { type: Role.ADMIN },
+          select: { id: true },
+        });
+        adminIds = admins.map((a) => a.id);
       }
 
       const orConditions: any = [
-        { creator_id: user_id }, 
-        { participant_id: user_id }
+        { creator_id: user_id },
+        { participant_id: user_id },
       ];
 
       if (isAdmin) {
@@ -359,7 +364,7 @@ export class ConversationService {
     }
   }
 
-  async createAdminConversation(user_id: string) {
+  async createAdminConversation(user_id: string, participant_id?: string) {
     try {
       // Find all admins
       const admins = await this.prisma.user.findMany({
@@ -392,9 +397,8 @@ export class ConversationService {
         }
       };
 
-      // Just create one conversation with the first admin found, 
-      // but all admins will be able to see it via findAll modifications.
-      const admin = admins[0];
+      // Determine the participant
+      let targetParticipantId = participant_id || null;
 
       let conversation = await this.prisma.conversation.findFirst({
         select: {
@@ -408,8 +412,8 @@ export class ConversationService {
         },
         where: {
           OR: [
-            { creator_id: user_id, participant_id: admin.id },
-            { creator_id: admin.id, participant_id: user_id },
+            { creator_id: user_id, participant_id: targetParticipantId },
+            { creator_id: targetParticipantId, participant_id: user_id },
           ],
         },
       });
@@ -427,7 +431,7 @@ export class ConversationService {
           },
           data: {
             creator_id: user_id,
-            participant_id: admin.id,
+            participant_id: targetParticipantId,
           },
         });
 
@@ -437,15 +441,23 @@ export class ConversationService {
           from: user_id,
           data: conversation,
         });
-        
-        // Notify all admins about the new support conversation
-        for (const ad of admins) {
-          const socketId = this.messageGateway.clients.get(ad.id);
-          if (socketId) {
-            this.messageGateway.server.to(socketId).emit('conversation', {
-              from: user_id,
-              data: conversation,
-            });
+
+        if (participant_id) {
+          // Notify the specific participant
+          this.messageGateway.server.to(participant_id).emit('conversation', {
+            from: participant_id,
+            data: conversation,
+          });
+        } else {
+          // Notify all admins about the new support conversation
+          for (const ad of admins) {
+            const socketId = this.messageGateway.clients.get(ad.id);
+            if (socketId) {
+              this.messageGateway.server.to(socketId).emit('conversation', {
+                from: user_id,
+                data: conversation,
+              });
+            }
           }
         }
       } else {
