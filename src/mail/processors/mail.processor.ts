@@ -2,6 +2,8 @@ import { MailerService } from '@nestjs-modules/mailer';
 import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Processor('mail-queue')
 export class MailProcessor extends WorkerHost {
@@ -34,6 +36,7 @@ export class MailProcessor extends WorkerHost {
             subject: job.data.subject,
             template: job.data.template,
             context: job.data.context,
+            attachments: this.getSignatureAttachment(),
           });
           break;
         case 'sendOtpCodeToEmail':
@@ -44,6 +47,7 @@ export class MailProcessor extends WorkerHost {
             subject: job.data.subject,
             template: job.data.template,
             context: job.data.context,
+            attachments: this.getSignatureAttachment(),
           });
           break;
         case 'sendVerificationLink':
@@ -53,6 +57,18 @@ export class MailProcessor extends WorkerHost {
             subject: job.data.subject,
             template: job.data.template,
             context: job.data.context,
+            attachments: this.getSignatureAttachment(),
+          });
+          break;
+        case 'sendContactNotification':
+          this.logger.log('Sending contact notification');
+          await this.mailerService.sendMail({
+            to: job.data.to,
+            from: job.data.from,
+            subject: job.data.subject,
+            template: job.data.template,
+            context: job.data.context,
+            attachments: this.getSignatureAttachment(),
           });
           break;
         default:
@@ -66,5 +82,19 @@ export class MailProcessor extends WorkerHost {
       );
       throw error;
     }
+  }
+
+  private getSignatureAttachment() {
+    const logoPath = path.join(process.cwd(), 'public', 'images', 'logo.png');
+    if (fs.existsSync(logoPath)) {
+      return [
+        {
+          filename: 'logo.png',
+          path: logoPath,
+          cid: 'signatureLogo',
+        },
+      ];
+    }
+    return [];
   }
 }
