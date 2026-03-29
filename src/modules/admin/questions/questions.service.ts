@@ -103,7 +103,13 @@ export class QuestionsService {
       if (search) {
         where.OR = [
           {
-            question_title: {
+            question_steam: {
+              contains: search,
+              mode: 'insensitive',
+            },
+          },
+          {
+            question_id: {
               contains: search,
               mode: 'insensitive',
             },
@@ -111,19 +117,27 @@ export class QuestionsService {
         ];
 
         // Check if search term matches any topic enum value
-        if (Object.values(topic).includes(search as topic)) {
+        const matchedTopics = Object.values(topic).filter((t) =>
+          t.toLowerCase().includes(search.toLowerCase()),
+        );
+
+        if (matchedTopics.length > 0) {
           where.OR.push({
             topic: {
-              has: search as topic,
+              hasSome: matchedTopics,
             },
           });
         }
 
         // Check if search term matches any difficulty enum value
-        if (Object.values(difficulty).includes(search as difficulty)) {
+        const matchedDifficulties = Object.values(difficulty).filter((d) =>
+          d.toLowerCase().includes(search.toLowerCase()),
+        );
+
+        if (matchedDifficulties.length > 0) {
           where.OR.push({
             difficulty: {
-              equals: search as difficulty,
+              in: matchedDifficulties,
             },
           });
         }
