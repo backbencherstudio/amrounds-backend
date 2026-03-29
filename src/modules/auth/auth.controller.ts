@@ -64,10 +64,27 @@ export class AuthController {
       {
         storage: memoryStorage(),
         fileFilter: (_, file, cb) => {
-          if (!file.mimetype.match(/\/(jpg|jpeg|png)$/)) {
+          if (
+            file.fieldname === 'avatar' &&
+            !file.mimetype.match(/\/(jpg|jpeg|png)$/)
+          ) {
             return cb(
               new HttpException(
-                'Only PNG/JPG files are allowed',
+                'Only PNG/JPG files are allowed for avatar',
+                HttpStatus.BAD_REQUEST,
+              ),
+              false,
+            );
+          }
+          if (
+            file.fieldname === 'verification_doc' &&
+            !file.mimetype.match(
+              /\/(jpg|jpeg|png|pdf|msword|vnd\.openxmlformats-officedocument\.wordprocessingml\.document)$/,
+            )
+          ) {
+            return cb(
+              new HttpException(
+                'Only PNG/JPG/PDF/DOC files are allowed for verification doc',
                 HttpStatus.BAD_REQUEST,
               ),
               false,
