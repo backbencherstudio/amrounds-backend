@@ -85,6 +85,7 @@ export class UserService {
           email: true,
           phone_number: true,
           avatar: true,
+          verifiy_document: true,
           address: true,
           type: true,
           approved_at: true,
@@ -103,6 +104,13 @@ export class UserService {
         if (user.avatar) {
           user['avatar_url'] = SojebStorage.url(
             appConfig().storageUrl.avatar + user.avatar,
+          );
+        }
+        if (user.verifiy_document) {
+          user['verifiy_document_url'] = SojebStorage.url(
+            appConfig().storageUrl.verification_doc +
+              '/' +
+              user.verifiy_document,
           );
         }
       });
