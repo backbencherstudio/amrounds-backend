@@ -768,6 +768,62 @@ export class TestService {
     };
   }
 
+  async getQuestionCount(user_id: string) {
+    try {
+      const totalQuestions = await this.prisma.questions.count({
+        where: { deleted_at: null },
+      });
+
+      const usedQuestions = await this.prisma.userAnswer.findMany({
+        where: { user_id },
+        distinct: ['question_id'],
+        select: { id: true },
+      });
+      const usedCount = usedQuestions.length;
+
+      const unusedCount = totalQuestions - usedCount;
+
+      const correctQuestions = await this.prisma.userAnswer.findMany({
+        where: { user_id, is_correct: true },
+        distinct: ['question_id'],
+        select: { id: true },
+      });
+      const correctCount = correctQuestions.length;
+
+      const incorrectQuestions = await this.prisma.userAnswer.findMany({
+        where: { user_id, is_correct: false },
+        distinct: ['question_id'],
+        select: { id: true },
+      });
+      const incorrectCount = incorrectQuestions.length;
+
+      const markedQuestions = await this.prisma.userAnswer.findMany({
+        where: { user_id, is_marked: true },
+        distinct: ['question_id'],
+        select: { id: true },
+      });
+      const markCount = markedQuestions.length;
+
+      return {
+        success: true,
+        message: 'Question count retrieved successfully',
+        data: {
+          total_questions: totalQuestions,
+          used_questions: usedCount,
+          unused_questions: unusedCount,
+          correct_count: correctCount,
+          incorrect_count: incorrectCount,
+          mark_count: markCount,
+        },
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.message || 'Failed to retrieve question count',
+      };
+    }
+  }
+
   async getTestDetails(user_id: string, test_id: string) {
     try {
       const test = await this.prisma.test.findUnique({
