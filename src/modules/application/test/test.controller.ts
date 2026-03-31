@@ -80,6 +80,12 @@ export class TestController {
     return this.testService.getTestHistoriesStats(user_id);
   }
 
+  @Get('question-count')
+  getQuestionCount(@Req() req: Request) {
+    const user_id = req.user.userId;
+    return this.testService.getQuestionCount(user_id);
+  }
+
   @Get('details/:id')
   getTestDetails(@Req() req: Request, @Param('id') id: string) {
     const user_id = req.user.userId;
