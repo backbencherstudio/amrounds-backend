@@ -87,6 +87,10 @@ export class UserService {
           avatar: true,
           verifiy_document: true,
           address: true,
+          facebook: true,
+          instagram: true,
+          twitter_x: true,
+          linkedin: true,
           type: true,
           approved_at: true,
           approved: true,
@@ -375,6 +379,20 @@ export class UserService {
       skip: (page - 1) * limit,
       take: limit,
     });
+
+    reports.forEach((report) => {
+      if (report.reported.avatar) {
+        report.reported['avatar_url'] = SojebStorage.url(
+          appConfig().storageUrl.avatar + report.reported.avatar,
+        );
+      }
+      if (report.reporter.avatar) {
+        report.reporter['avatar_url'] = SojebStorage.url(
+          appConfig().storageUrl.avatar + report.reporter.avatar,
+        );
+      }
+    });
+
     const total = await this.prisma.report.count();
     return {
       success: true,

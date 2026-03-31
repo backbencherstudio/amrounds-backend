@@ -1,4 +1,4 @@
-import { Controller, Get, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Req, UseGuards } from '@nestjs/common';
 import { StatisticService } from './statistic.service';
 import { Request } from 'express';
 import { RolesGuard } from 'src/common/guard/role/roles.guard';
@@ -14,5 +14,10 @@ export class StatisticController {
   @Get()
   getStatistics(@Req() req: Request) {
     return this.statisticService.getStatistics(req?.user?.userId);
+  }
+
+  @Get('/:id')
+  getStatisticsById(@Param('id') id: string) {
+    return this.statisticService.getStatistics(id);
   }
 }
