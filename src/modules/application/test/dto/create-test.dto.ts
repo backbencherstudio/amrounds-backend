@@ -59,9 +59,19 @@ export class CreateTestDto {
   })
   test_mode: TestMode[];
 
-  @IsEnum(difficulty)
-  @IsNotEmpty()
-  difficulty: difficulty;
+  @IsArray()
+  @IsEnum(difficulty, { each: true })
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      try {
+        return JSON.parse(value);
+      } catch (e) {
+        return value.split(',').map((item) => item.trim());
+      }
+    }
+    return value;
+  })
+  difficulty: difficulty[];
 
   @IsArray()
   @IsEnum(topic, { each: true })

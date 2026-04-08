@@ -59,7 +59,7 @@ export class TestService {
       }
 
       const questionFilter: any = {
-        difficulty: difficulty,
+        difficulty: { in: difficulty },
         topic: { hasSome: topic },
         AND: orConditions.length > 0 ? [{ OR: orConditions }] : [],
       };
@@ -638,10 +638,66 @@ export class TestService {
   async getTestHistories(user_id: string, query: TestHistoryDto) {
     const { page = 1, limit = 10, search } = query;
     const skip = (page - 1) * limit;
+
+    const whereCondition: any = {
+      user_id,
+    };
+
+    if (search) {
+      const searchUpper = search.toUpperCase();
+      whereCondition.OR = [];
+
+      const validModes = [
+        'USED',
+        'UNUSED',
+        'CORRECT',
+        'INCORRECT',
+        'OMITTED',
+        'MARKED',
+      ];
+      const matchedMode = validModes.find(
+        (m) => m.toUpperCase() === searchUpper,
+      );
+      if (matchedMode) {
+        whereCondition.OR.push({ test_mode: { has: matchedMode } });
+      } else {
+        whereCondition.OR.push({ test_mode: { has: search } });
+      }
+
+      const validDifficulties = ['Intern', 'Board', 'Senior'];
+      const matchedDiff = validDifficulties.find(
+        (d) => d.toUpperCase() === searchUpper,
+      );
+      if (matchedDiff) {
+        whereCondition.OR.push({ difficulty: { has: matchedDiff } });
+      }
+
+      const validTopics = [
+        'Anesthesia_Medicine',
+        'Cancer',
+        'Cleft_Craniofacial',
+        'Cosmetics',
+        'Dentoalveolar',
+        'Implants',
+        'Orthognathic',
+        'Pathology',
+        'Recontraction',
+        'TMJ',
+        'Trauma',
+      ];
+      const matchedTopic = validTopics.find(
+        (t) => t.toUpperCase() === searchUpper,
+      );
+      if (matchedTopic) {
+        whereCondition.OR.push({ topic: { has: matchedTopic } });
+      }
+
+      // If none matched enums and we pushed only the raw search to test_mode,
+      // and it didn't match anything, it will return an empty array, which is standard.
+    }
+
     const tests = await this.prisma.test.findMany({
-      where: {
-        user_id,
-      },
+      where: whereCondition,
       select: {
         id: true,
         created_at: true,
@@ -770,9 +826,33 @@ export class TestService {
 
   async getQuestionCount(user_id: string) {
     try {
-      const totalQuestions = await this.prisma.questions.count({
+      const allQuestionsInfo = await this.prisma.questions.findMany({
         where: { deleted_at: null },
+        select: { id: true, difficulty: true, topic: true },
       });
+      const totalQuestions = allQuestionsInfo.length;
+
+      const difficultyStats: Record<string, number> = {};
+      const topicStats: Record<string, number> = {};
+
+      allQuestionsInfo.forEach((q) => {
+        if (q.difficulty) {
+          difficultyStats[q.difficulty] =
+            (difficultyStats[q.difficulty] || 0) + 1;
+        }
+        if (q.topic && Array.isArray(q.topic)) {
+          q.topic.forEach((t) => {
+            topicStats[t] = (topicStats[t] || 0) + 1;
+          });
+        }
+      });
+
+      const difficulty_wise_count = Object.entries(difficultyStats).map(
+        ([name, count]) => ({ name, count }),
+      );
+      const topic_wise_count = Object.entries(topicStats).map(
+        ([name, count]) => ({ name, count }),
+      );
 
       const usedQuestions = await this.prisma.userAnswer.findMany({
         where: { user_id },
@@ -814,6 +894,8 @@ export class TestService {
           correct_count: correctCount,
           incorrect_count: incorrectCount,
           mark_count: markCount,
+          difficulty_wise_count,
+          topic_wise_count,
         },
       };
     } catch (error) {

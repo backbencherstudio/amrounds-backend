@@ -405,4 +405,40 @@ export class UserService {
       },
     };
   }
+
+  async getReportedUsersConversation(query: {
+    reporterId: string;
+    reportedId: string;
+  }) {
+    try {
+      const { reporterId, reportedId } = query;
+      const conversations = await this.prisma.conversation.findMany({
+        where: {
+          OR: [
+            {
+              creator_id: reporterId,
+              participant_id: reportedId,
+            },
+            {
+              creator_id: reportedId,
+              participant_id: reporterId,
+            },
+          ],
+        },
+      });
+
+      console.log(conversations);
+
+      return {
+        success: true,
+        message: 'Reported users conversation fetched successfully',
+        data: conversations,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
+  }
 }

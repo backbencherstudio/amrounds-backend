@@ -168,7 +168,12 @@ export class AuthService {
     if (updateUserDto.email_notification) {
       data.email_notification = updateUserDto.email_notification;
     }
-
+    if (
+      updateUserDto.is_public !== undefined ||
+      updateUserDto.is_public !== null
+    ) {
+      data.is_public = updateUserDto.is_public;
+    }
     if (updateUserDto.password) {
       data.password = await this.changePassword({
         user_id: userId,
