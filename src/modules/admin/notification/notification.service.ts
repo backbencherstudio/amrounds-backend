@@ -61,6 +61,9 @@ export class NotificationService {
             },
           },
         },
+        orderBy: {
+          created_at: 'desc',
+        },
       });
 
       // add url to avatar
