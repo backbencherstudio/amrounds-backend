@@ -54,9 +54,12 @@ CREATE TABLE "users" (
     "twitter_x" TEXT,
     "facebook" TEXT,
     "verifiy_document" TEXT,
+    "cv" TEXT,
     "approved" BOOLEAN DEFAULT false,
+    "rejected" BOOLEAN DEFAULT false,
     "email_notification" BOOLEAN DEFAULT true,
     "website_notification" BOOLEAN DEFAULT true,
+    "is_public" BOOLEAN DEFAULT true,
     "phone_number" TEXT,
     "country" TEXT,
     "state" TEXT,
@@ -211,8 +214,8 @@ CREATE TABLE "messages" (
     "status" "MessageStatus" DEFAULT 'PENDING',
     "sender_id" TEXT,
     "receiver_id" TEXT,
+    "receiver_deleted_at" TIMESTAMP(3),
     "conversation_id" TEXT,
-    "attachment_id" TEXT,
     "message" TEXT,
 
     CONSTRAINT "messages_pkey" PRIMARY KEY ("id")
@@ -229,6 +232,7 @@ CREATE TABLE "attachments" (
     "size" INTEGER,
     "file" TEXT,
     "file_alt" TEXT,
+    "message_id" TEXT,
 
     CONSTRAINT "attachments_pkey" PRIMARY KEY ("id")
 );
@@ -265,6 +269,7 @@ CREATE TABLE "contacts" (
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "deleted_at" TIMESTAMP(3),
+    "name" TEXT,
     "first_name" TEXT,
     "last_name" TEXT,
     "email" TEXT,
@@ -341,9 +346,15 @@ CREATE TABLE "questions" (
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "deleted_at" TIMESTAMP(3),
-    "question" TEXT,
+    "question_id" TEXT,
+    "question_steam" TEXT,
     "question_title" TEXT,
     "explanation" TEXT,
+    "explanation_image" TEXT,
+    "why_incorrect" TEXT,
+    "pimping_point" TEXT,
+    "memory_trick" TEXT,
+    "referance" TEXT,
     "user_id" TEXT,
     "difficulty" "difficulty",
     "topic" "topic"[],
@@ -379,11 +390,145 @@ CREATE TABLE "supports" (
 );
 
 -- CreateTable
+CREATE TABLE "follows" (
+    "id" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "deleted_at" TIMESTAMP(3),
+    "following_id" TEXT NOT NULL,
+    "follower_id" TEXT NOT NULL,
+
+    CONSTRAINT "follows_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "educations" (
+    "id" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "deleted_at" TIMESTAMP(3),
+    "user_id" TEXT NOT NULL,
+    "degree" TEXT,
+    "description" TEXT,
+    "institute" TEXT,
+    "year" TEXT,
+
+    CONSTRAINT "educations_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "experiences" (
+    "id" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "deleted_at" TIMESTAMP(3),
+    "user_id" TEXT NOT NULL,
+    "company" TEXT,
+    "position" TEXT,
+    "location" TEXT,
+    "start_date" TEXT,
+    "end_date" TEXT,
+
+    CONSTRAINT "experiences_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "skills" (
+    "id" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "deleted_at" TIMESTAMP(3),
+    "user_id" TEXT NOT NULL,
+    "name" TEXT,
+
+    CONSTRAINT "skills_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "publications" (
+    "id" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "deleted_at" TIMESTAMP(3),
+    "user_id" TEXT NOT NULL,
+    "title" TEXT,
+    "topic" TEXT,
+    "link" TEXT,
+    "year" TEXT,
+
+    CONSTRAINT "publications_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "activities" (
+    "id" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "deleted_at" TIMESTAMP(3),
+    "title" TEXT,
+    "description" TEXT,
+
+    CONSTRAINT "activities_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "reports" (
+    "id" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "deleted_at" TIMESTAMP(3),
+    "reporter_id" TEXT NOT NULL,
+    "reported_id" TEXT,
+    "description" TEXT,
+
+    CONSTRAINT "reports_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "tests" (
+    "id" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "user_id" TEXT NOT NULL,
+    "test_mode" TEXT[],
+    "difficulty" "difficulty"[],
+    "topic" "topic"[],
+    "total_attempts" INTEGER NOT NULL DEFAULT 0,
+    "total_questions" INTEGER NOT NULL,
+    "score" DOUBLE PRECISION,
+    "is_completed" BOOLEAN NOT NULL DEFAULT false,
+
+    CONSTRAINT "tests_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "user_answers" (
+    "id" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "test_id" TEXT NOT NULL,
+    "user_id" TEXT NOT NULL,
+    "question_id" TEXT NOT NULL,
+    "selected_option_id" TEXT,
+    "is_marked" BOOLEAN NOT NULL DEFAULT false,
+    "is_omitted" BOOLEAN NOT NULL DEFAULT false,
+    "is_correct" BOOLEAN,
+
+    CONSTRAINT "user_answers_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "_PermissionToRole" (
     "A" TEXT NOT NULL,
     "B" TEXT NOT NULL,
 
     CONSTRAINT "_PermissionToRole_AB_pkey" PRIMARY KEY ("A","B")
+);
+
+-- CreateTable
+CREATE TABLE "_QuestionsToTest" (
+    "A" TEXT NOT NULL,
+    "B" TEXT NOT NULL,
+
+    CONSTRAINT "_QuestionsToTest_AB_pkey" PRIMARY KEY ("A","B")
 );
 
 -- CreateIndex
@@ -402,7 +547,34 @@ CREATE UNIQUE INDEX "users_domain_key" ON "users"("domain");
 CREATE UNIQUE INDEX "settings_key_key" ON "settings"("key");
 
 -- CreateIndex
+CREATE INDEX "follows_follower_id_idx" ON "follows"("follower_id");
+
+-- CreateIndex
+CREATE INDEX "follows_following_id_idx" ON "follows"("following_id");
+
+-- CreateIndex
+CREATE INDEX "follows_follower_id_following_id_idx" ON "follows"("follower_id", "following_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "follows_following_id_follower_id_key" ON "follows"("following_id", "follower_id");
+
+-- CreateIndex
+CREATE INDEX "educations_user_id_idx" ON "educations"("user_id");
+
+-- CreateIndex
+CREATE INDEX "experiences_user_id_idx" ON "experiences"("user_id");
+
+-- CreateIndex
+CREATE INDEX "skills_user_id_idx" ON "skills"("user_id");
+
+-- CreateIndex
+CREATE INDEX "publications_user_id_idx" ON "publications"("user_id");
+
+-- CreateIndex
 CREATE INDEX "_PermissionToRole_B_index" ON "_PermissionToRole"("B");
+
+-- CreateIndex
+CREATE INDEX "_QuestionsToTest_B_index" ON "_QuestionsToTest"("B");
 
 -- AddForeignKey
 ALTER TABLE "accounts" ADD CONSTRAINT "accounts_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -450,7 +622,7 @@ ALTER TABLE "messages" ADD CONSTRAINT "messages_receiver_id_fkey" FOREIGN KEY ("
 ALTER TABLE "messages" ADD CONSTRAINT "messages_conversation_id_fkey" FOREIGN KEY ("conversation_id") REFERENCES "conversations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "messages" ADD CONSTRAINT "messages_attachment_id_fkey" FOREIGN KEY ("attachment_id") REFERENCES "attachments"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "attachments" ADD CONSTRAINT "attachments_message_id_fkey" FOREIGN KEY ("message_id") REFERENCES "messages"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "conversations" ADD CONSTRAINT "conversations_creator_id_fkey" FOREIGN KEY ("creator_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -474,7 +646,52 @@ ALTER TABLE "answer_options" ADD CONSTRAINT "answer_options_question_id_fkey" FO
 ALTER TABLE "supports" ADD CONSTRAINT "supports_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "follows" ADD CONSTRAINT "follows_following_id_fkey" FOREIGN KEY ("following_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "follows" ADD CONSTRAINT "follows_follower_id_fkey" FOREIGN KEY ("follower_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "educations" ADD CONSTRAINT "educations_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "experiences" ADD CONSTRAINT "experiences_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "skills" ADD CONSTRAINT "skills_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "publications" ADD CONSTRAINT "publications_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "reports" ADD CONSTRAINT "reports_reporter_id_fkey" FOREIGN KEY ("reporter_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "reports" ADD CONSTRAINT "reports_reported_id_fkey" FOREIGN KEY ("reported_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "tests" ADD CONSTRAINT "tests_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "user_answers" ADD CONSTRAINT "user_answers_test_id_fkey" FOREIGN KEY ("test_id") REFERENCES "tests"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "user_answers" ADD CONSTRAINT "user_answers_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "user_answers" ADD CONSTRAINT "user_answers_question_id_fkey" FOREIGN KEY ("question_id") REFERENCES "questions"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "user_answers" ADD CONSTRAINT "user_answers_selected_option_id_fkey" FOREIGN KEY ("selected_option_id") REFERENCES "answer_options"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "_PermissionToRole" ADD CONSTRAINT "_PermissionToRole_A_fkey" FOREIGN KEY ("A") REFERENCES "permissions"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "_PermissionToRole" ADD CONSTRAINT "_PermissionToRole_B_fkey" FOREIGN KEY ("B") REFERENCES "roles"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_QuestionsToTest" ADD CONSTRAINT "_QuestionsToTest_A_fkey" FOREIGN KEY ("A") REFERENCES "questions"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_QuestionsToTest" ADD CONSTRAINT "_QuestionsToTest_B_fkey" FOREIGN KEY ("B") REFERENCES "tests"("id") ON DELETE CASCADE ON UPDATE CASCADE;

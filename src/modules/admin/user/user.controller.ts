@@ -52,6 +52,14 @@ export class UserController {
   getUserReports(@Query() query: PaginationDto) {
     return this.userService.getUserReports(query);
   }
+  // reported users conversation
+  @Get('reported-users-conversation')
+  getReportedUsersConversation(
+    @Query() query: { reporterId: string; reportedId: string },
+  ) {
+    return this.userService.getReportedUsersConversation(query);
+  }
+
   // approve user
   @Roles(Role.ADMIN)
   @ApiResponse({ description: 'Approve a user' })

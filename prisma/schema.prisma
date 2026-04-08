@@ -684,13 +684,13 @@ model Test {
   user    User   @relation(fields: [user_id], references: [id])
 
   test_mode       String[]
-  difficulty      difficulty
+  difficulty      difficulty[]
   topic           topic[]
   // Test settings
-  total_attempts  Int        @default(0)
+  total_attempts  Int          @default(0)
   total_questions Int
   score           Float? // end the test hole score here
-  is_completed    Boolean    @default(false)
+  is_completed    Boolean      @default(false)
 
   // Relationships
   user_answers UserAnswer[]
