@@ -113,36 +113,44 @@ export class AuthController {
     const credentials = data.credentials;
     const training_practice = data.training_practice;
     const address = data.address;
-    const type = 'user'; // Force default type to user
+    const country = data.country;
+    const state = data.state;
+    const type = 'user';
 
     if (!name) {
-      throw new HttpException('Name not provided', HttpStatus.UNAUTHORIZED);
+      throw new HttpException('Name not provided', HttpStatus.BAD_REQUEST);
     }
 
     if (!email) {
-      throw new HttpException('Email not provided', HttpStatus.UNAUTHORIZED);
+      throw new HttpException('Email not provided', HttpStatus.BAD_REQUEST);
     }
     if (!password) {
-      throw new HttpException('Password not provided', HttpStatus.UNAUTHORIZED);
+      throw new HttpException('Password not provided', HttpStatus.BAD_REQUEST);
     }
     if (!credentials) {
       throw new HttpException(
         'Credentials not provided',
-        HttpStatus.UNAUTHORIZED,
+        HttpStatus.BAD_REQUEST,
       );
     }
     if (!training_practice) {
       throw new HttpException(
         'Training practice not provided',
-        HttpStatus.UNAUTHORIZED,
+        HttpStatus.BAD_REQUEST,
       );
     }
     if (!address) {
-      throw new HttpException('Address not provided', HttpStatus.UNAUTHORIZED);
+      throw new HttpException('Address not provided', HttpStatus.BAD_REQUEST);
+    }
+    if (!country) {
+      throw new HttpException('Country not provided', HttpStatus.BAD_REQUEST);
+    }
+    if (!state) {
+      throw new HttpException('State not provided', HttpStatus.BAD_REQUEST);
     }
 
     if (!files || !files.avatar || files.avatar.length === 0) {
-      throw new HttpException('Avatar not provided', HttpStatus.UNAUTHORIZED);
+      throw new HttpException('Avatar not provided', HttpStatus.BAD_REQUEST);
     }
 
     const response = await this.authService.register({
@@ -158,6 +166,8 @@ export class AuthController {
       linkedin: data.linkedin,
       twitter_x: data.twitter_x,
       facebook: data.facebook,
+      country: data.country,
+      state: data.state,
       type: type,
       avatar: files.avatar[0],
       verification_doc: files.verification_doc

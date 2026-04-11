@@ -12,8 +12,6 @@ import { UcodeRepository } from '../../common/repository/ucode/ucode.repository'
 import { MailService } from '../../mail/mail.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { SojebStorage } from '../../common/lib/Disk/SojebStorage';
-import { DateHelper } from '../../common/helper/date.helper';
-import { StripePayment } from '../../common/lib/Payment/stripe/StripePayment';
 import { StringHelper } from '../../common/helper/string.helper';
 import { NotificationRepository } from 'src/common/repository/notification/notification.repository';
 import { MessageGateway } from '../chat/message/message.gateway';
@@ -53,6 +51,8 @@ export class AuthService {
           email: true,
           avatar: true,
           address: true,
+          country: true,
+          state: true,
           phone_number: true,
           type: true,
           gender: true,
@@ -403,6 +403,8 @@ export class AuthService {
     credentials,
     training_practice,
     address,
+    country,
+    state,
     current_practice,
     bio,
     instagram,
@@ -419,6 +421,8 @@ export class AuthService {
     credentials: string;
     training_practice: string;
     address: string;
+    country: string;
+    state: string;
     current_practice?: string;
     bio?: string;
     instagram?: string;
@@ -469,6 +473,8 @@ export class AuthService {
         credentials: credentials,
         training_practice: training_practice,
         address: address,
+        country: country,
+        state: state,
         current_practice: current_practice,
         bio: bio,
         instagram: instagram,

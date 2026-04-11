@@ -188,6 +188,8 @@ export class UserRepository {
     credentials,
     training_practice,
     address,
+    country,
+    state,
     current_practice,
     bio,
     instagram,
@@ -208,6 +210,8 @@ export class UserRepository {
     credentials?: string;
     training_practice?: string;
     address?: string;
+    country?: string;
+    state?: string;
     current_practice?: string;
     bio?: string;
     instagram?: string;
@@ -241,6 +245,12 @@ export class UserRepository {
       }
       if (address) {
         data['address'] = address;
+      }
+      if (country) {
+        data['country'] = country;
+      }
+      if (state) {
+        data['state'] = state;
       }
       if (current_practice) {
         data['current_practice'] = current_practice;
