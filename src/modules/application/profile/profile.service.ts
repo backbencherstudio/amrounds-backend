@@ -294,15 +294,23 @@ export class ProfileService {
   }
 
   async getConnections(user_id: string, query: ConnectionsQueryDTO) {
-    const { page = 1, limit = 10, type = DiscoverProfileType.All } = query;
+    const {
+      page = 1,
+      limit = 10,
+      type = DiscoverProfileType.All,
+      user_id: query_user_id = user_id,
+    } = query;
 
     const where: Prisma.FollowWhereInput = {};
     if (type === DiscoverProfileType.Following) {
-      where.follower_id = user_id;
+      where.follower_id = query_user_id;
     } else if (type === DiscoverProfileType.Follower) {
-      where.following_id = user_id;
+      where.following_id = query_user_id;
     } else {
-      where.OR = [{ following_id: user_id }, { follower_id: user_id }];
+      where.OR = [
+        { following_id: query_user_id },
+        { follower_id: query_user_id },
+      ];
     }
     const connections = await this.prisma.follow.findMany({
       where,
@@ -339,7 +347,7 @@ export class ProfileService {
       success: true,
       data: connections.map((connection) => {
         let userNode =
-          connection.follower_id === user_id
+          connection.follower_id === query_user_id
             ? connection.following
             : connection.follower;
         return {

@@ -23,6 +23,10 @@ export class ConnectionsQueryDTO extends PaginationDto {
   @IsOptional()
   @IsEnum(DiscoverProfileType)
   type?: DiscoverProfileType = DiscoverProfileType.All;
+
+  @IsOptional()
+  @IsString()
+  user_id?: string;
 }
 
 export class DiscoverProfileQueryDTO extends PaginationDto {
