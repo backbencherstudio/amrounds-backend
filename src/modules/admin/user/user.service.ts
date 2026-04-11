@@ -87,6 +87,8 @@ export class UserService {
           avatar: true,
           verifiy_document: true,
           address: true,
+          country: true,
+          state: true,
           facebook: true,
           instagram: true,
           twitter_x: true,

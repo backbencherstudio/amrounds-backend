@@ -58,6 +58,8 @@ model User {
   // New value
   credentials          String?
   training_practice    String?
+  country              String?
+  state                String?
   address              String?
   current_practice     String?
   bio                  String?
@@ -74,8 +76,6 @@ model User {
   is_public            Boolean? @default(true)
 
   phone_number  String?
-  country       String?
-  state         String?
   city          String?
   zip_code      String?
   gender        String?

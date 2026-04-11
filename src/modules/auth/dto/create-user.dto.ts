@@ -33,6 +33,14 @@ export class CreateUserDto {
 
   @IsNotEmpty()
   @ApiProperty()
+  country: string;
+
+  @IsNotEmpty()
+  @ApiProperty()
+  state: string;
+
+  @IsNotEmpty()
+  @ApiProperty()
   address: string;
 
   @IsOptional()
