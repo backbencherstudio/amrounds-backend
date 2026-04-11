@@ -384,6 +384,8 @@ export class ProfileService {
         credentials: true,
         training_practice: true,
         address: true,
+        country: true,
+        state: true,
         current_practice: true,
         bio: true,
         instagram: true,
