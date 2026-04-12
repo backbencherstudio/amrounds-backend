@@ -198,12 +198,12 @@ export class LeaderboardService {
 
   async getMapData() {
     const groupedData = await this.prisma.user.groupBy({
-      by: ['city', 'country'],
+      by: ['country'],
       where: {
         is_public: true,
         status: 1,
         type: 'user',
-        city: { not: null },
+        state: { not: null },
         country: { not: null },
       },
       _count: {
@@ -215,7 +215,6 @@ export class LeaderboardService {
       success: true,
       message: 'Map data retrieved successfully',
       data: groupedData.map((item) => ({
-        city: item.city,
         country: item.country,
         count: item._count.id,
       })),
