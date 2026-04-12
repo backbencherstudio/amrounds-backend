@@ -372,87 +372,139 @@ export class ProfileService {
     if (!user_id) {
       throw new UnauthorizedException('User not found');
     }
-    const user = await this.prisma.user.findUnique({
-      where: {
-        id: user_id,
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        avatar: true,
-        credentials: true,
-        training_practice: true,
-        address: true,
-        country: true,
-        state: true,
-        current_practice: true,
-        bio: true,
-        instagram: true,
-        linkedin: true,
-        twitter_x: true,
-        facebook: true,
-        type: true,
-        cv: true,
-        is_public: true,
-        created_at: true,
-        email_notification: true,
-        website_notification: true,
-        educations: {
-          select: {
-            id: true,
-            degree: true,
-            description: true,
-            institute: true,
-            year: true,
+
+    const [user, testStats, rankResult, topicStats] = await Promise.all([
+      this.prisma.user.findUnique({
+        where: { id: user_id },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          avatar: true,
+          credentials: true,
+          training_practice: true,
+          address: true,
+          country: true,
+          state: true,
+          current_practice: true,
+          bio: true,
+          instagram: true,
+          linkedin: true,
+          twitter_x: true,
+          facebook: true,
+          type: true,
+          cv: true,
+          is_public: true,
+          created_at: true,
+          email_notification: true,
+          website_notification: true,
+          educations: {
+            select: {
+              id: true,
+              degree: true,
+              description: true,
+              institute: true,
+              year: true,
+            },
+            orderBy: { year: 'desc' },
           },
-          orderBy: {
-            year: 'desc',
+          experiences: {
+            select: {
+              id: true,
+              company: true,
+              position: true,
+              location: true,
+              start_date: true,
+              end_date: true,
+            },
+            orderBy: { start_date: 'desc' },
           },
-        },
-        experiences: {
-          select: {
-            id: true,
-            company: true,
-            position: true,
-            location: true,
-            start_date: true,
-            end_date: true,
+          skills: {
+            select: { id: true, name: true },
           },
-          orderBy: {
-            start_date: 'desc',
+          publications: {
+            select: { id: true, topic: true, link: true, year: true },
+            orderBy: { year: 'desc' },
           },
-        },
-        skills: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-        publications: {
-          select: {
-            id: true,
-            topic: true,
-            link: true,
-            year: true,
-          },
-          orderBy: {
-            year: 'desc',
+          _count: {
+            select: { followings: true, followers: true },
           },
         },
-        _count: {
-          select: {
-            followings: true,
-            followers: true,
-          },
-        },
-      },
-    });
+      }),
+
+      // Test stats: complete_percentage & correct_percentage
+      this.prisma.$queryRaw<
+        {
+          total: number;
+          completed: number;
+          avg_score: number | null;
+        }[]
+      >`
+        SELECT
+          COUNT(*)::int as total,
+          COUNT(CASE WHEN is_completed = true THEN 1 END)::int as completed,
+          AVG(CASE WHEN is_completed = true THEN score END)::float as avg_score
+        FROM tests
+        WHERE user_id = ${user_id}
+      `,
+
+      // Ranking: all-time rank based on avg_score desc, total_tests desc
+      this.prisma.$queryRaw<{ rank: number }[]>`
+        WITH base_stats AS (
+          SELECT
+            t.user_id,
+            COUNT(*)::int as total_tests,
+            AVG(t.score)::float as avg_score
+          FROM tests t
+          WHERE t.is_completed = true
+          GROUP BY t.user_id
+        ),
+        ranked_users AS (
+          SELECT
+            user_id,
+            RANK() OVER (ORDER BY avg_score DESC, total_tests DESC)::int as rank
+          FROM base_stats
+        )
+        SELECT rank FROM ranked_users
+        WHERE user_id = ${user_id}
+      `,
+
+      // Best topic: highest correct percentage topic (min 1 attempt)
+      this.prisma.$queryRaw<{ topic: string; correct_percentage: number }[]>`
+        SELECT
+          t::text as topic,
+          ROUND(
+            (COUNT(CASE WHEN ua.is_correct = true THEN 1 END)::numeric / COUNT(*)) * 100
+          )::int as correct_percentage
+        FROM user_answers ua
+        JOIN questions q ON ua.question_id = q.id
+        CROSS JOIN LATERAL unnest(q.topic) as t
+        WHERE ua.user_id = ${user_id}
+          AND ua.is_correct IS NOT NULL
+        GROUP BY t
+        ORDER BY correct_percentage DESC
+        LIMIT 1
+      `,
+    ]);
+
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
     const { _count, ...rest } = user;
+
+    // Compute statistics
+    const { total = 0, completed = 0, avg_score = 0 } = testStats[0] || {};
+    const complete_percentage =
+      total > 0 ? +((completed / total) * 100).toFixed(2) : 0;
+    const correct_percentage = +(+(avg_score ?? 0)).toFixed(2);
+    const ranking = rankResult[0]?.rank ?? null;
+    const best_topic = topicStats[0]
+      ? {
+          name: topicStats[0].topic,
+          correct_percentage: topicStats[0].correct_percentage,
+        }
+      : null;
 
     if (user.type == 'admin') {
       return {
@@ -474,6 +526,7 @@ export class ProfileService {
         },
       };
     }
+
     return {
       success: true,
       message: 'Profile fetched successfully',
@@ -487,6 +540,12 @@ export class ProfileService {
           : null,
         followings: _count.followings,
         followers: _count.followers,
+        statistics: {
+          complete_percentage,
+          correct_percentage,
+          ranking,
+          best_topic,
+        },
       },
     };
   }
