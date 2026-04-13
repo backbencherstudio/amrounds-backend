@@ -712,6 +712,10 @@ export class TestService {
       take: limit,
     });
 
+    const total = await this.prisma.test.count({
+      where: whereCondition,
+    });
+
     return {
       success: true,
       message: 'Test history retrieved successfully',
@@ -719,7 +723,7 @@ export class TestService {
       meta_data: {
         page,
         limit,
-        total: tests?.length || 0,
+        total: total || 0,
       },
     };
   }
