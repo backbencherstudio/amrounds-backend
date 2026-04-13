@@ -639,10 +639,12 @@ export class ProfileService {
   async createEducation(
     user_id: string,
     createEducationDto: CreateEducationDto,
+    education_id?: string,
   ) {
     const education = await this.prisma.education.upsert({
       where: {
-        id: user_id,
+        id: education_id || '',
+        user_id,
       },
       update: {
         ...createEducationDto,
@@ -661,7 +663,9 @@ export class ProfileService {
     });
     return {
       success: true,
-      message: 'Education created successfully',
+      message: education_id
+        ? 'Education updated successfully'
+        : 'Education created successfully',
       data: education,
     };
   }
@@ -669,10 +673,12 @@ export class ProfileService {
   async createExperience(
     user_id: string,
     createExperienceDto: CreateExperienceDto,
+    experience_id?: string,
   ) {
     const experience = await this.prisma.experience.upsert({
       where: {
-        id: user_id,
+        id: experience_id || '',
+        user_id,
       },
       update: {
         ...createExperienceDto,
@@ -692,15 +698,22 @@ export class ProfileService {
     });
     return {
       success: true,
-      message: 'Experience created successfully',
+      message: experience_id
+        ? 'Experience updated successfully'
+        : 'Experience created successfully',
       data: experience,
     };
   }
 
-  async createSkill(user_id: string, createSkillDto: CreateSkillDto) {
+  async createSkill(
+    user_id: string,
+    createSkillDto: CreateSkillDto,
+    skill_id?: string,
+  ) {
     const skill = await this.prisma.skill.upsert({
       where: {
-        id: user_id,
+        id: skill_id || '',
+        user_id,
       },
       update: {
         ...createSkillDto,
@@ -716,7 +729,9 @@ export class ProfileService {
     });
     return {
       success: true,
-      message: 'Skill created successfully',
+      message: skill_id
+        ? 'Skill updated successfully'
+        : 'Skill created successfully',
       data: skill,
     };
   }
@@ -724,10 +739,12 @@ export class ProfileService {
   async createPublication(
     user_id: string,
     createPublicationDto: CreatePublicationDto,
+    publication_id?: string,
   ) {
     const publication = await this.prisma.publication.upsert({
       where: {
-        id: user_id,
+        id: publication_id || '',
+        user_id,
       },
       update: {
         ...createPublicationDto,
@@ -745,7 +762,9 @@ export class ProfileService {
     });
     return {
       success: true,
-      message: 'Publication created successfully',
+      message: publication_id
+        ? 'Publication updated successfully'
+        : 'Publication created successfully',
       data: publication,
     };
   }
