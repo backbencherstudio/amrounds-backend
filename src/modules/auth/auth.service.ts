@@ -111,12 +111,12 @@ export class AuthService {
     // if (updateUserDto.phone_number) {
     //   data.phone_number = updateUserDto.phone_number;
     // }
-    // if (updateUserDto.country) {
-    //   data.country = updateUserDto.country;
-    // }
-    // if (updateUserDto.state) {
-    //   data.state = updateUserDto.state;
-    // }
+    if (updateUserDto.country) {
+      data.country = updateUserDto.country;
+    }
+    if (updateUserDto.state) {
+      data.state = updateUserDto.state;
+    }
     // if (updateUserDto.local_government) {
     //   data.local_government = updateUserDto.local_government;
     // }
