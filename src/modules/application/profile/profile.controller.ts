@@ -60,34 +60,48 @@ export class ProfileController {
   createEducation(
     @Body() createEducationDto: CreateEducationDto,
     @Req() req: Request,
+    @Query('education_id') education_id?: string,
   ) {
     return this.profileService.createEducation(
       req.user.userId,
       createEducationDto,
+      education_id,
     );
   }
   @Put('experience')
   createExperience(
     @Body() createExperienceDto: CreateExperienceDto,
     @Req() req: Request,
+    @Query('experience_id') experience_id?: string,
   ) {
     return this.profileService.createExperience(
       req.user.userId,
       createExperienceDto,
+      experience_id,
     );
   }
   @Put('skill')
-  createSkill(@Body() createSkillDto: CreateSkillDto, @Req() req: Request) {
-    return this.profileService.createSkill(req.user.userId, createSkillDto);
+  createSkill(
+    @Body() createSkillDto: CreateSkillDto,
+    @Req() req: Request,
+    @Query('skill_id') skill_id?: string,
+  ) {
+    return this.profileService.createSkill(
+      req.user.userId,
+      createSkillDto,
+      skill_id,
+    );
   }
   @Put('publication')
   createPublication(
     @Body() createPublicationDto: CreatePublicationDto,
     @Req() req: Request,
+    @Query('publication_id') publication_id?: string,
   ) {
     return this.profileService.createPublication(
       req.user.userId,
       createPublicationDto,
+      publication_id,
     );
   }
 
