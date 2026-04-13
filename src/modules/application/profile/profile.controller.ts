@@ -56,7 +56,7 @@ export class ProfileController {
   getConnections(@Req() req: Request, @Query() query: ConnectionsQueryDTO) {
     return this.profileService.getConnections(req.user.userId, query);
   }
-  @Post('education')
+  @Put('education')
   createEducation(
     @Body() createEducationDto: CreateEducationDto,
     @Req() req: Request,
@@ -66,7 +66,7 @@ export class ProfileController {
       createEducationDto,
     );
   }
-  @Post('experience')
+  @Put('experience')
   createExperience(
     @Body() createExperienceDto: CreateExperienceDto,
     @Req() req: Request,
@@ -76,11 +76,11 @@ export class ProfileController {
       createExperienceDto,
     );
   }
-  @Post('skill')
+  @Put('skill')
   createSkill(@Body() createSkillDto: CreateSkillDto, @Req() req: Request) {
     return this.profileService.createSkill(req.user.userId, createSkillDto);
   }
-  @Post('publication')
+  @Put('publication')
   createPublication(
     @Body() createPublicationDto: CreatePublicationDto,
     @Req() req: Request,
