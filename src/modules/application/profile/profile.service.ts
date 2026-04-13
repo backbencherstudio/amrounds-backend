@@ -640,8 +640,14 @@ export class ProfileService {
     user_id: string,
     createEducationDto: CreateEducationDto,
   ) {
-    const education = await this.prisma.education.create({
-      data: {
+    const education = await this.prisma.education.upsert({
+      where: {
+        id: user_id,
+      },
+      update: {
+        ...createEducationDto,
+      },
+      create: {
         ...createEducationDto,
         user_id,
       },
@@ -664,8 +670,14 @@ export class ProfileService {
     user_id: string,
     createExperienceDto: CreateExperienceDto,
   ) {
-    const experience = await this.prisma.experience.create({
-      data: {
+    const experience = await this.prisma.experience.upsert({
+      where: {
+        id: user_id,
+      },
+      update: {
+        ...createExperienceDto,
+      },
+      create: {
         ...createExperienceDto,
         user_id,
       },
@@ -686,8 +698,14 @@ export class ProfileService {
   }
 
   async createSkill(user_id: string, createSkillDto: CreateSkillDto) {
-    const skill = await this.prisma.skill.create({
-      data: {
+    const skill = await this.prisma.skill.upsert({
+      where: {
+        id: user_id,
+      },
+      update: {
+        ...createSkillDto,
+      },
+      create: {
         ...createSkillDto,
         user_id,
       },
@@ -707,8 +725,14 @@ export class ProfileService {
     user_id: string,
     createPublicationDto: CreatePublicationDto,
   ) {
-    const publication = await this.prisma.publication.create({
-      data: {
+    const publication = await this.prisma.publication.upsert({
+      where: {
+        id: user_id,
+      },
+      update: {
+        ...createPublicationDto,
+      },
+      create: {
         ...createPublicationDto,
         user_id,
       },
