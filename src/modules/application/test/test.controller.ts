@@ -91,4 +91,10 @@ export class TestController {
     const user_id = req.user.userId;
     return this.testService.getTestDetails(user_id, id);
   }
+
+  @Get(':id')
+  getOneTest(@Req() req: Request, @Param('id') id: string) {
+    const user_id = req.user.userId;
+    return this.testService.getOneTest(user_id, id);
+  }
 }

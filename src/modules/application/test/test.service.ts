@@ -126,6 +126,55 @@ export class TestService {
     }
   }
 
+  async getOneTest(user_id: string, test_id: string) {
+    try {
+      const test = await this.prisma.test.findUnique({
+        where: { id: test_id },
+        include: {
+          questions: {
+            select: {
+              id: true,
+              question_steam: true,
+              question_title: true,
+              answerOptions: {
+                select: {
+                  id: true,
+                  option_text: true,
+                },
+              },
+            },
+          },
+          user_answers: {
+            where: {
+              test_id: test_id,
+              user_id: user_id,
+            },
+            select: {
+              id: true,
+              question_id: true,
+              is_marked: true,
+            },
+          },
+        },
+      });
+
+      if (!test) {
+        throw new Error('Test not found');
+      }
+
+      return {
+        success: true,
+        message: 'Test fetched successfully',
+        data: test,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Failed to fetch test',
+      };
+    }
+  }
+
   async answerTest(user_id: string, answerTestDto: AnswerTestDto) {
     try {
       const { test_id, question_id, answer_option_id } = answerTestDto;
