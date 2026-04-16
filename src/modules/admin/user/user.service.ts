@@ -360,6 +360,11 @@ export class UserService {
     const { page = 1, limit = 10 } = query;
     const reports = await this.prisma.report.findMany({
       select: {
+        id: true,
+        description: true,
+        created_at: true,
+        reported_id: true,
+        reporter_id: true,
         reported: {
           select: {
             id: true,
@@ -382,24 +387,52 @@ export class UserService {
       take: limit,
     });
 
-    reports.forEach((report) => {
-      if (report.reported.avatar) {
-        report.reported['avatar_url'] = SojebStorage.url(
-          appConfig().storageUrl.avatar + report.reported.avatar,
-        );
-      }
-      if (report.reporter.avatar) {
-        report.reporter['avatar_url'] = SojebStorage.url(
-          appConfig().storageUrl.avatar + report.reporter.avatar,
-        );
-      }
-    });
+    const reportData = await Promise.all(
+      reports.map(async (report) => {
+        if (report.reported?.avatar) {
+          report.reported['avatar_url'] = SojebStorage.url(
+            appConfig().storageUrl.avatar + report.reported.avatar,
+          );
+        }
+        if (report.reporter?.avatar) {
+          report.reporter['avatar_url'] = SojebStorage.url(
+            appConfig().storageUrl.avatar + report.reporter.avatar,
+          );
+        }
+
+        // Get conversation id if exists
+        let conversation_id = null;
+        if (report.reported_id && report.reporter_id) {
+          const conversation = await this.prisma.conversation.findFirst({
+            where: {
+              OR: [
+                {
+                  creator_id: report.reporter_id,
+                  participant_id: report.reported_id,
+                },
+                {
+                  creator_id: report.reported_id,
+                  participant_id: report.reporter_id,
+                },
+              ],
+            },
+            select: { id: true },
+          });
+          conversation_id = conversation?.id || null;
+        }
+
+        return {
+          ...report,
+          conversation_id,
+        };
+      }),
+    );
 
     const total = await this.prisma.report.count();
     return {
       success: true,
       message: 'User reports fetched successfully',
-      data: reports,
+      data: reportData,
       meta_data: {
         page,
         limit,
