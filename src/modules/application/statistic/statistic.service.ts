@@ -12,6 +12,7 @@ export class StatisticService {
       totalQuestions,
       topicStats,
       totalQuestionsByTopicRaw,
+      topicRankRaw,
     ] = await Promise.all([
       this.prisma.$queryRaw<
         { avg_score: number | null; total: number; completed: number }[]
@@ -71,6 +72,30 @@ export class StatisticService {
         CROSS JOIN LATERAL unnest(q.topic) as t
         GROUP BY t
       `,
+
+      this.prisma.$queryRaw<{ topic: string; rank: number }[]>`
+        SELECT topic, rank
+        FROM (
+          SELECT
+            ua.user_id,
+            t::text as topic,
+            RANK() OVER (
+              PARTITION BY t
+              ORDER BY
+                ROUND(
+                  100.0 * COUNT(CASE WHEN ua.is_correct = true THEN 1 END)
+                  / NULLIF(COUNT(*), 0),
+                  2
+                ) DESC
+            )::int as rank
+          FROM user_answers ua
+          JOIN questions q ON ua.question_id = q.id
+          CROSS JOIN LATERAL unnest(q.topic) as t
+          WHERE ua.is_correct IS NOT NULL
+          GROUP BY ua.user_id, t
+        ) ranked
+        WHERE user_id = ${user_id}
+      `,
     ]);
 
     // Extract Test Stats
@@ -97,6 +122,10 @@ export class StatisticService {
       totalQuestionsByTopicRaw.map((t) => [t.topic, t.total_questions]),
     );
 
+    const topicRankMap = new Map<string, number>(
+      topicRankRaw.map((r) => [r.topic, r.rank]),
+    );
+
     const unusedQuestions = Math.max(0, totalQuestions - usedQuestions);
     const questionBankProgress = totalQuestions
       ? +(100 * (usedQuestions / totalQuestions)).toFixed(2)
@@ -120,7 +149,7 @@ export class StatisticService {
         topic: stats.topic,
         correct_percentage: percentage,
         total_correct: stats.correct,
-        percentile_rank: 0,
+        rank: topicRankMap.get(stats.topic) ?? null,
         question_bank_progress: progressPercentage,
       };
     });
