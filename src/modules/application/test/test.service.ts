@@ -422,6 +422,48 @@ export class TestService {
     }
   }
 
+  async getMarkQuestions(user_id: string) {
+    try {
+      const test = await this.prisma.userAnswer.findMany({
+        where: {
+          user_id: user_id,
+          is_marked: true,
+        },
+        select: {
+          id: true,
+          created_at: true,
+          test_id: true,
+          is_marked: true,
+          question: {
+            select: {
+              id: true,
+              question_steam: true,
+              answerOptions: { select: { id: true, option_text: true } },
+            },
+          },
+        },
+        orderBy: {
+          created_at: 'desc',
+        },
+      });
+
+      if (!test) {
+        throw new Error('Test not found');
+      }
+
+      return {
+        success: true,
+        message: 'Question marked status updated',
+        data: test,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.message || 'Failed to mark question',
+      };
+    }
+  }
+
   async skipQuestion(user_id: string, skipQuestionDto: SkipQuestionDto) {
     try {
       const { test_id, question_id } = skipQuestionDto;
@@ -756,6 +798,9 @@ export class TestService {
         total_questions: true,
         score: true,
         is_completed: true,
+      },
+      orderBy: {
+        created_at: 'desc',
       },
       skip,
       take: limit,
