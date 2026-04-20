@@ -50,6 +50,12 @@ export class TestController {
     return this.testService.markQuestion(user_id, markQuestionDto);
   }
 
+  @Get('mark-questions')
+  getAllMarkQuestions(@Req() req: Request) {
+    const user_id = req.user.userId;
+    return this.testService.getMarkQuestions(user_id);
+  }
+
   @Post('skip')
   skipQuestion(@Req() req: Request, @Body() skipQuestionDto: SkipQuestionDto) {
     const user_id = req.user.userId;
