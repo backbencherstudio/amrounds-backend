@@ -22,7 +22,7 @@ import { Role } from 'src/common/guard/role/role.enum';
 import { AnswerTestDto } from './dto/answer-test.dto';
 import { MarkQuestionDto } from './dto/mark-question.dto';
 import { SkipQuestionDto } from './dto/skip-question.dto';
-import { TestHistoryDto } from './dto/query-test.dto';
+import { PaginationDto, TestHistoryDto } from './dto/query-test.dto';
 
 @ApiBearerAuth()
 @ApiTags('Test')
@@ -54,6 +54,18 @@ export class TestController {
   getAllMarkQuestions(@Req() req: Request) {
     const user_id = req.user.userId;
     return this.testService.getMarkQuestions(user_id);
+  }
+
+  @Get('ongoing')
+  getOngoingTests(@Req() req: Request, @Query() query: PaginationDto) {
+    const user_id = req.user.userId;
+    return this.testService.getOngoingTests(user_id, query);
+  }
+
+  @Get('questions/:test_id')
+  getQuestionsByTestId(@Req() req: Request, @Param('test_id') test_id: string) {
+    const user_id = req.user.userId;
+    return this.testService.getQuestionsByTestId(user_id, test_id);
   }
 
   @Post('skip')
