@@ -7,7 +7,7 @@ import { SojebStorage } from 'src/common/lib/Disk/SojebStorage';
 import appConfig from 'src/config/app.config';
 import { MarkQuestionDto } from './dto/mark-question.dto';
 import { SkipQuestionDto } from './dto/skip-question.dto';
-import { TestHistoryDto } from './dto/query-test.dto';
+import { PaginationDto, TestHistoryDto } from './dto/query-test.dto';
 
 @Injectable()
 export class TestService {
@@ -460,6 +460,89 @@ export class TestService {
       return {
         success: false,
         message: error.message || 'Failed to mark question',
+      };
+    }
+  }
+
+  async getOngoingTests(user_id: string, query: PaginationDto) {
+    try {
+      const { page, limit } = query;
+      const skip = (page - 1) * limit;
+      const take = limit;
+      const test = await this.prisma.test.findMany({
+        where: {
+          user_id: user_id,
+          is_completed: false,
+          score: null,
+        },
+        select: {
+          id: true,
+          created_at: true,
+        },
+        skip,
+        take,
+        orderBy: {
+          created_at: 'desc',
+        },
+      });
+
+      if (!test) {
+        throw new Error('Test not found');
+      }
+
+      const total = await this.prisma.test.count({
+        where: {
+          user_id: user_id,
+          is_completed: false,
+          score: null,
+        },
+      });
+      return {
+        success: true,
+        message: 'Test found successfully',
+        data: test,
+        metadata: {
+          page,
+          limit,
+          total,
+        },
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.message || 'Failed to get test',
+      };
+    }
+  }
+
+  async getQuestionsByTestId(user_id: string, test_id: string) {
+    try {
+      const test = await this.prisma.test.findUnique({
+        where: { id: test_id },
+        include: {
+          questions: {
+            select: {
+              id: true,
+              question_steam: true,
+              answerOptions: { select: { id: true, option_text: true } },
+            },
+          },
+        },
+      });
+
+      if (!test) {
+        throw new Error('Test not found');
+      }
+
+      return {
+        success: true,
+        message: 'Questions found successfully',
+        data: test,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.message || 'Failed to get questions',
       };
     }
   }
