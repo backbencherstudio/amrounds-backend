@@ -478,6 +478,11 @@ export class TestService {
         select: {
           id: true,
           created_at: true,
+          is_completed: true,
+          difficulty: true,
+          topic: true,
+          test_mode: true,
+          total_questions: true,
         },
         skip,
         take,

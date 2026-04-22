@@ -37,21 +37,18 @@ export class ChatRepository {
    * @returns
    */
   async updateUserStatus(user_id: string, status: string) {
-    // if user exist
-    const user = await this.prisma.user.findFirst({
-      where: {
-        id: user_id,
-      },
-    });
-
-    if (!user) {
-      return;
+    try {
+      // Use updateMany to avoid unnecessary findFirst query and handle non-existent users gracefully
+      return await this.prisma.user.updateMany({
+        where: { id: user_id },
+        data: {
+          availability: status,
+        },
+      });
+    } catch (error) {
+      console.error(`Failed to update user status for ${user_id}:`, error);
+      // We don't throw here to prevent crashing the gateway/socket during disconnects
     }
-    return await this.prisma.user.update({
-      where: { id: user_id },
-      data: {
-        availability: status,
-      },
-    });
   }
+
 }
