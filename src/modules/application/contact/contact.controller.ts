@@ -1,8 +1,9 @@
 import { Controller, Post, Body } from '@nestjs/common';
 import { ContactService } from './contact.service';
 import { CreateContactDto } from './dto/create-contact.dto';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
+@ApiBearerAuth('JWT')
 @ApiTags('Contact')
 @Controller('contact')
 export class ContactController {

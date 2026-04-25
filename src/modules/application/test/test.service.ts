@@ -134,6 +134,7 @@ export class TestService {
           questions: {
             select: {
               id: true,
+              question_id: true,
               question_steam: true,
               question_title: true,
               answerOptions: {
