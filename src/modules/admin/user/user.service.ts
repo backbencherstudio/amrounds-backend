@@ -205,15 +205,15 @@ export class UserService {
           approved_at: DateHelper.now(),
           approved: true,
           rejected: false,
-          verifiy_document: null,
+          // verifiy_document: null,
         },
       });
 
-      if (user.verifiy_document) {
-        await SojebStorage.delete(
-          appConfig().storageUrl.verification_doc + '/' + user.verifiy_document,
-        );
-      }
+      // if (user.verifiy_document) {
+      //   await SojebStorage.delete(
+      //     appConfig().storageUrl.verification_doc + '/' + user.verifiy_document,
+      //   );
+      // }
 
       await this.createActivity({
         title: 'User approved',
