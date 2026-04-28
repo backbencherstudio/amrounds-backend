@@ -28,10 +28,7 @@ export class ContactService {
       }
 
       await this.prisma.contact.create({
-        data: {
-          ...data,
-          updated_at: DateHelper.now(),
-        },
+        data: data as any,
       });
       return {
         success: true,
