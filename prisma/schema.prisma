@@ -381,6 +381,7 @@ model Contact {
   first_name   String?
   last_name    String?
   email        String?
+  subject      String
   phone_number String?
   message      String?
 
