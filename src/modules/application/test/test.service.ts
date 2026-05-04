@@ -687,6 +687,7 @@ export class TestService {
             select: {
               id: true,
               topic: true,
+              difficulty: true,
             },
           },
           user_answers: true,
@@ -712,6 +713,12 @@ export class TestService {
 
       // Topic-wise stats map
       const topicStats = new Map<
+        string,
+        { total: number; answered: number; correct: number; incorrect: number }
+      >();
+
+      // Difficulty-wise stats map
+      const difficultyStats = new Map<
         string,
         { total: number; answered: number; correct: number; incorrect: number }
       >();
@@ -760,6 +767,28 @@ export class TestService {
             }
           }
         }
+
+        if (question.difficulty) {
+          if (!difficultyStats.has(question.difficulty)) {
+            difficultyStats.set(question.difficulty, {
+              total: 0,
+              answered: 0,
+              correct: 0,
+              incorrect: 0,
+            });
+          }
+
+          const stats = difficultyStats.get(question.difficulty);
+          stats.total++;
+          if (isAnswered) {
+            stats.answered++;
+            if (isCorrect) {
+              stats.correct++;
+            } else {
+              stats.incorrect++;
+            }
+          }
+        }
       }
 
       const topicWiseStats = Array.from(topicStats.entries()).map(
@@ -768,6 +797,21 @@ export class TestService {
             stats.answered > 0 ? (stats.correct / stats.answered) * 100 : 0;
           return {
             topic,
+            total_questions: stats.total,
+            answered: stats.answered,
+            correct: stats.correct,
+            incorrect: stats.incorrect,
+            percentage: parseFloat(percentage.toFixed(2)),
+          };
+        },
+      );
+
+      const difficultyWiseStats = Array.from(difficultyStats.entries()).map(
+        ([difficulty, stats]) => {
+          const percentage =
+            stats.answered > 0 ? (stats.correct / stats.answered) * 100 : 0;
+          return {
+            difficulty,
             total_questions: stats.total,
             answered: stats.answered,
             correct: stats.correct,
@@ -805,6 +849,7 @@ export class TestService {
           unused_questions: unusedCount,
           score: test.score || 0,
           topic_wise_stats: topicWiseStats,
+          difficulty_wise_stats: difficultyWiseStats,
         },
       };
     } catch (error) {
