@@ -118,9 +118,7 @@ export class StatisticService {
       used_questions_count: 0,
     };
 
-    const totalQuestionsByTopicMap = new Map<string, number>(
-      totalQuestionsByTopicRaw.map((t) => [t.topic, t.total_questions]),
-    );
+
 
     const topicRankMap = new Map<string, number>(
       topicRankRaw.map((r) => [r.topic, r.rank]),
@@ -133,23 +131,32 @@ export class StatisticService {
 
     const incompleteTests = Math.max(0, totalTests - completedTests);
 
-    const performanceByTopic = topicStats.map((stats) => {
+    const topicStatsMap = new Map<string, (typeof topicStats)[number]>(
+      topicStats.map((s) => [s.topic, s]),
+    );
+
+    const performanceByTopic = totalQuestionsByTopicRaw.map((topicData) => {
+      const stats = topicStatsMap.get(topicData.topic) || {
+        attempted: 0,
+        correct: 0,
+        used_questions: 0,
+      };
+
       const percentage = stats.attempted
         ? +(100 * (stats.correct / stats.attempted)).toFixed(2)
         : 0;
 
-      const totalQuestionsInTopic =
-        totalQuestionsByTopicMap.get(stats.topic) || 0;
+      const totalQuestionsInTopic = topicData.total_questions;
 
       const progressPercentage = totalQuestionsInTopic
         ? +(100 * (stats.used_questions / totalQuestionsInTopic)).toFixed(2)
         : 0;
 
       return {
-        topic: stats.topic,
+        topic: topicData.topic,
         correct_percentage: percentage,
         total_correct: stats.correct,
-        rank: topicRankMap.get(stats.topic) ?? null,
+        rank: topicRankMap.get(topicData.topic) ?? null,
         question_bank_progress: progressPercentage,
       };
     });
