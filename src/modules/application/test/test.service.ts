@@ -137,10 +137,17 @@ export class TestService {
               question_id: true,
               question_steam: true,
               question_title: true,
+              explanation: true,
+              explanation_image: true,
+              why_incorrect: true,
+              pimping_point: true,
+              memory_trick: true,
+              referance: true,
               answerOptions: {
                 select: {
                   id: true,
                   option_text: true,
+                  is_correct: true,
                 },
               },
             },
@@ -163,6 +170,50 @@ export class TestService {
       if (!test) {
         throw new Error('Test not found');
       }
+
+      test.questions = test.questions.map((question: any) => {
+        if (question && question.explanation) {
+          question.explanation = question.explanation.replace(
+            /\\(?=")|\\(?=\/)/g,
+            '',
+          );
+        }
+
+        let explanation_image_url = null;
+        if (question && question.explanation_image) {
+          if (question.explanation_image.startsWith('http')) {
+            explanation_image_url = question.explanation_image;
+          } else {
+            explanation_image_url = SojebStorage.url(
+              appConfig().storageUrl.question + question.explanation_image,
+            );
+          }
+
+          if (question.explanation) {
+            const escapedFileName = question.explanation_image.replace(
+              /[.*+?^${}()|[\]\\]/g,
+              '\\$&',
+            );
+            const regex = new RegExp(
+              `(src=['"])([^'"]*${escapedFileName})(['"])`,
+              'g',
+            );
+            question.explanation = question.explanation.replace(
+              regex,
+              (match, p1, p2, p3) => {
+                if (p2.startsWith('http')) {
+                  return match;
+                }
+                return `${p1}${explanation_image_url}${p3}`;
+              },
+            );
+          }
+        }
+        return {
+          ...question,
+          explanation_image_url,
+        };
+      }) as any;
 
       return {
         success: true,
