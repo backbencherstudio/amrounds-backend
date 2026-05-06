@@ -153,6 +153,7 @@ export class TestService {
             select: {
               id: true,
               question_id: true,
+              selected_option_id: true,
               is_marked: true,
             },
           },
