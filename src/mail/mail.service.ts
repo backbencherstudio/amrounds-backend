@@ -82,7 +82,7 @@ export class MailService {
   async sendContactNotification({ adminEmail, contact }) {
     try {
       const from = `${process.env.APP_NAME} <${appConfig().mail.from}>`;
-      const subject = `New Contact: ${contact.subject}`;
+      const subject = contact.subject;
 
       await this.queue.add('sendContactNotification', {
         to: adminEmail,
@@ -94,6 +94,25 @@ export class MailService {
           email: contact.email,
           subject: contact.subject,
           message: contact.message,
+        },
+      });
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  async sendUserApprovalEmail(user) {
+    try {
+      const from = `${process.env.APP_NAME} <${appConfig().mail.from}>`;
+      const subject = 'Account Approved';
+
+      await this.queue.add('sendUserApprovalEmail', {
+        to: user.email,
+        from: from,
+        subject: subject,
+        template: 'user-approval',
+        context: {
+          name: user.name,
         },
       });
     } catch (error) {

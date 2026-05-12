@@ -137,10 +137,17 @@ export class TestService {
               question_id: true,
               question_steam: true,
               question_title: true,
+              explanation: true,
+              explanation_image: true,
+              why_incorrect: true,
+              pimping_point: true,
+              memory_trick: true,
+              referance: true,
               answerOptions: {
                 select: {
                   id: true,
                   option_text: true,
+                  is_correct: true,
                 },
               },
             },
@@ -153,6 +160,7 @@ export class TestService {
             select: {
               id: true,
               question_id: true,
+              selected_option_id: true,
               is_marked: true,
             },
           },
@@ -162,6 +170,50 @@ export class TestService {
       if (!test) {
         throw new Error('Test not found');
       }
+
+      test.questions = test.questions.map((question: any) => {
+        if (question && question.explanation) {
+          question.explanation = question.explanation.replace(
+            /\\(?=")|\\(?=\/)/g,
+            '',
+          );
+        }
+
+        let explanation_image_url = null;
+        if (question && question.explanation_image) {
+          if (question.explanation_image.startsWith('http')) {
+            explanation_image_url = question.explanation_image;
+          } else {
+            explanation_image_url = SojebStorage.url(
+              appConfig().storageUrl.question + question.explanation_image,
+            );
+          }
+
+          if (question.explanation) {
+            const escapedFileName = question.explanation_image.replace(
+              /[.*+?^${}()|[\]\\]/g,
+              '\\$&',
+            );
+            const regex = new RegExp(
+              `(src=['"])([^'"]*${escapedFileName})(['"])`,
+              'g',
+            );
+            question.explanation = question.explanation.replace(
+              regex,
+              (match, p1, p2, p3) => {
+                if (p2.startsWith('http')) {
+                  return match;
+                }
+                return `${p1}${explanation_image_url}${p3}`;
+              },
+            );
+          }
+        }
+        return {
+          ...question,
+          explanation_image_url,
+        };
+      }) as any;
 
       return {
         success: true,
@@ -687,6 +739,7 @@ export class TestService {
             select: {
               id: true,
               topic: true,
+              difficulty: true,
             },
           },
           user_answers: true,
@@ -712,6 +765,12 @@ export class TestService {
 
       // Topic-wise stats map
       const topicStats = new Map<
+        string,
+        { total: number; answered: number; correct: number; incorrect: number }
+      >();
+
+      // Difficulty-wise stats map
+      const difficultyStats = new Map<
         string,
         { total: number; answered: number; correct: number; incorrect: number }
       >();
@@ -760,6 +819,28 @@ export class TestService {
             }
           }
         }
+
+        if (question.difficulty) {
+          if (!difficultyStats.has(question.difficulty)) {
+            difficultyStats.set(question.difficulty, {
+              total: 0,
+              answered: 0,
+              correct: 0,
+              incorrect: 0,
+            });
+          }
+
+          const stats = difficultyStats.get(question.difficulty);
+          stats.total++;
+          if (isAnswered) {
+            stats.answered++;
+            if (isCorrect) {
+              stats.correct++;
+            } else {
+              stats.incorrect++;
+            }
+          }
+        }
       }
 
       const topicWiseStats = Array.from(topicStats.entries()).map(
@@ -768,6 +849,21 @@ export class TestService {
             stats.answered > 0 ? (stats.correct / stats.answered) * 100 : 0;
           return {
             topic,
+            total_questions: stats.total,
+            answered: stats.answered,
+            correct: stats.correct,
+            incorrect: stats.incorrect,
+            percentage: parseFloat(percentage.toFixed(2)),
+          };
+        },
+      );
+
+      const difficultyWiseStats = Array.from(difficultyStats.entries()).map(
+        ([difficulty, stats]) => {
+          const percentage =
+            stats.answered > 0 ? (stats.correct / stats.answered) * 100 : 0;
+          return {
+            difficulty,
             total_questions: stats.total,
             answered: stats.answered,
             correct: stats.correct,
@@ -805,6 +901,7 @@ export class TestService {
           unused_questions: unusedCount,
           score: test.score || 0,
           topic_wise_stats: topicWiseStats,
+          difficulty_wise_stats: difficultyWiseStats,
         },
       };
     } catch (error) {
