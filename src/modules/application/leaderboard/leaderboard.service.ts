@@ -84,26 +84,31 @@ export class LeaderboardService {
       await Promise.all([
         this.prisma.$queryRawUnsafe<any[]>(
           `
-      ${statsQuery()}
-      SELECT
-        r.rank,
-        r.user_id,
-        r.total_tests,
-        r.avg_score,
-        r.accuracy,
-        u.name,
-        u.avatar,
-        u.current_practice as institution
-      FROM ranked_users r
-      JOIN users u ON r.user_id = u.id
+      ${statsQuery()},
+      visible_leaderboard AS (
+        SELECT
+          r.user_id,
+          r.total_tests,
+          r.avg_score,
+          r.accuracy,
+          u.name,
+          u.avatar,
+          u.current_practice as institution,
+          RANK() OVER (ORDER BY r.avg_score DESC, r.total_tests DESC)::int as rank
+        FROM ranked_users r
+        JOIN users u ON r.user_id = u.id
+        WHERE u.is_public = true OR u.id = $4
+      )
+      SELECT * FROM visible_leaderboard
       WHERE 
-        ($1::text IS NULL OR u.name ILIKE $1 OR u.current_practice ILIKE $1)
-      ORDER BY r.rank ASC
+        ($1::text IS NULL OR name ILIKE $1 OR institution ILIKE $1)
+      ORDER BY rank ASC
       LIMIT $2 OFFSET $3
     `,
           searchPattern,
           limit,
           offset,
+          userId,
         ),
 
         this.prisma.$queryRawUnsafe<any[]>(

@@ -19,6 +19,7 @@ export class ContactService {
         first_name: createContactDto.first_name,
         last_name: createContactDto.last_name,
         email: createContactDto.email,
+        subject: createContactDto.subject,
         phone_number: createContactDto.phone_number,
         message: createContactDto.message,
       },
@@ -26,7 +27,7 @@ export class ContactService {
 
     // Send email to the configured admin email
     const adminEmail = appConfig().mail.from;
-    const emailSubject = `New Contact Message from ${createContactDto.name || 'Visitor'}`;
+    const emailSubject = createContactDto.subject;
 
     try {
       const contactInfo = {

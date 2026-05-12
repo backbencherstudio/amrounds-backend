@@ -114,6 +114,36 @@ export class QuestionsService {
               mode: 'insensitive',
             },
           },
+          {
+            explanation: {
+              contains: search,
+              mode: 'insensitive',
+            },
+          },
+          {
+            why_incorrect: {
+              contains: search,
+              mode: 'insensitive',
+            },
+          },
+          {
+            pimping_point: {
+              contains: search,
+              mode: 'insensitive',
+            },
+          },
+          {
+            memory_trick: {
+              contains: search,
+              mode: 'insensitive',
+            },
+          },
+          {
+            referance: {
+              contains: search,
+              mode: 'insensitive',
+            },
+          },
         ];
 
         // Check if search term matches any topic enum value
