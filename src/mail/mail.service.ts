@@ -100,4 +100,23 @@ export class MailService {
       console.log(error);
     }
   }
+
+  async sendUserApprovalEmail(user) {
+    try {
+      const from = `${process.env.APP_NAME} <${appConfig().mail.from}>`;
+      const subject = 'Account Approved';
+
+      await this.queue.add('sendUserApprovalEmail', {
+        to: user.email,
+        from: from,
+        subject: subject,
+        template: 'user-approval',
+        context: {
+          name: user.name,
+        },
+      });
+    } catch (error) {
+      console.log(error);
+    }
+  }
 }
