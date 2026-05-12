@@ -71,6 +71,17 @@ export class MailProcessor extends WorkerHost {
             attachments: this.getSignatureAttachment(),
           });
           break;
+        case 'sendUserApprovalEmail':
+          this.logger.log('Sending user approval email');
+          await this.mailerService.sendMail({
+            to: job.data.to,
+            from: job.data.from,
+            subject: job.data.subject,
+            template: job.data.template,
+            context: job.data.context,
+            attachments: this.getSignatureAttachment(),
+          });
+          break;
         default:
           this.logger.log('Unknown job name');
           return;

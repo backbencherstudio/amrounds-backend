@@ -9,6 +9,7 @@ import { DateHelper } from '../../../common/helper/date.helper';
 import { GetAllUserDto, PaginationDto } from './dto/query-user.dto';
 import { MessageGateway } from 'src/modules/chat/message/message.gateway';
 import { NotificationRepository } from 'src/common/repository/notification/notification.repository';
+import { MailService } from 'src/mail/mail.service';
 
 @Injectable()
 export class UserService {
@@ -17,6 +18,7 @@ export class UserService {
     private userRepository: UserRepository,
     private messageGateway: MessageGateway,
     private notificationRepository: NotificationRepository,
+    private mailService: MailService,
   ) {}
 
   async create(createUserDto: CreateUserDto) {
@@ -235,6 +237,8 @@ export class UserService {
       if (userSocketId) {
         this.messageGateway.server.to(userSocketId).emit('approved', user);
       }
+
+      await this.mailService.sendUserApprovalEmail(user);
 
       return {
         success: true,
