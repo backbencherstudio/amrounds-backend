@@ -6,7 +6,7 @@ import appConfig from 'src/config/app.config';
 
 @Injectable()
 export class LeaderboardService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async getLeaderboard(userId: string, query: GetLeaderboardDto) {
     let { period = 'week', search, page = 1, limit = 10, filter } = query;
@@ -35,7 +35,7 @@ export class LeaderboardService {
     if (filter === 'high_accuracy') {
       havingClause = 'AND accuracy >= 70';
     } else if (filter === 'active_users') {
-      havingClause = 'AND total_tests >= 50';
+      havingClause = 'AND accuracy >= 50';
     }
     const statsQuery = (forUser?: string) => `
       WITH base_stats AS (
@@ -185,12 +185,12 @@ export class LeaderboardService {
       data: {
         user_stats: currentUserStatsRow
           ? {
-              rank: currentUserStatsRow.rank,
-              tests_completed: currentUserStatsRow.total_tests,
-              accuracy: currentUserStatsRow.accuracy || 0,
-              current_streak: currentStreak,
-              trend: currentUserTrend,
-            }
+            rank: currentUserStatsRow.rank,
+            tests_completed: currentUserStatsRow.total_tests,
+            accuracy: currentUserStatsRow.accuracy || 0,
+            current_streak: currentStreak,
+            trend: currentUserTrend,
+          }
           : null,
         leaderboard,
         meta: {
