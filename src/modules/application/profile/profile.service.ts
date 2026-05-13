@@ -274,17 +274,19 @@ export class ProfileService {
 
     return {
       success: true,
-      data: users.map((user) => {
-        return {
-          ...user,
-          avatar: user.avatar
-            ? SojebStorage.url(
-                `${appConfig().storageUrl.avatar}/${user.avatar}`,
-              )
-            : null,
-          is_following: following.some((f) => f.following_id === user.id),
-        };
-      }),
+      data: await Promise.all(
+        users.map(async (user) => {
+          return {
+            ...user,
+            avatar: user.avatar
+              ? await SojebStorage.url(
+                  `${appConfig().storageUrl.avatar}/${user.avatar}`,
+                )
+              : null,
+            is_following: following.some((f) => f.following_id === user.id),
+          };
+        }),
+      ),
       meta_data: {
         page: Number(page),
         limit: Number(limit),
@@ -345,20 +347,22 @@ export class ProfileService {
     });
     return {
       success: true,
-      data: connections.map((connection) => {
-        let userNode =
-          connection.follower_id === query_user_id
-            ? connection.following
-            : connection.follower;
-        return {
-          ...userNode,
-          avatar: userNode.avatar
-            ? SojebStorage.url(
-                `${appConfig().storageUrl.avatar}/${userNode.avatar}`,
-              )
-            : null,
-        };
-      }),
+      data: await Promise.all(
+        connections.map(async (connection) => {
+          let userNode =
+            connection.follower_id === query_user_id
+              ? connection.following
+              : connection.follower;
+          return {
+            ...userNode,
+            avatar: userNode.avatar
+              ? await SojebStorage.url(
+                  `${appConfig().storageUrl.avatar}/${userNode.avatar}`,
+                )
+              : null,
+          };
+        }),
+      ),
       meta_data: {
         page: Number(page),
         limit: Number(limit),
@@ -521,7 +525,9 @@ export class ProfileService {
           join_date: rest.created_at,
           bio: rest.bio,
           avatar: rest.avatar
-            ? SojebStorage.url(`${appConfig().storageUrl.avatar}${rest.avatar}`)
+            ? await SojebStorage.url(
+                `${appConfig().storageUrl.avatar}/${rest.avatar}`,
+              )
             : null,
         },
       };
@@ -533,10 +539,12 @@ export class ProfileService {
       data: {
         ...rest,
         avatar: rest.avatar
-          ? SojebStorage.url(`${appConfig().storageUrl.avatar}/${rest.avatar}`)
+          ? await SojebStorage.url(
+              `${appConfig().storageUrl.avatar}/${rest.avatar}`,
+            )
           : null,
         cv: rest.cv
-          ? SojebStorage.url(`${appConfig().storageUrl.cv}/${rest.cv}`)
+          ? await SojebStorage.url(`${appConfig().storageUrl.cv}/${rest.cv}`)
           : null,
         followings: _count.followings,
         followers: _count.followers,

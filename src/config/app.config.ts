@@ -83,12 +83,12 @@ export default () => ({
     package: '/package',
     destination: '/destination',
     blog: '/blog',
-    avatar: '/avatars/',
+    avatar: '/avatars', // /
     websiteInfo: '/website-info',
     file: '/file',
     // chat
-    attachment: '/attachment/',
-    question: '/question/',
+    attachment: '/attachment', // /
+    question: '/question', // /
     verification_doc: '/verification-docs',
     cv: '/cv',
   },

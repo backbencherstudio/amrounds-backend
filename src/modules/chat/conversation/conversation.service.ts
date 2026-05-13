@@ -66,17 +66,17 @@ export class ConversationService {
         },
       });
 
-      const addAvatarUrl = (conv) => {
+      const addAvatarUrl = async (conv) => {
         if (conv.creator.avatar) {
           Object.assign(conv.creator, {
-            avatar_url: SojebStorage.url(
+            avatar_url: await SojebStorage.url(
               appConfig().storageUrl.avatar + conv.creator.avatar,
             ),
           });
         }
         if (conv.participant.avatar) {
           Object.assign(conv.participant, {
-            avatar_url: SojebStorage.url(
+            avatar_url: await SojebStorage.url(
               appConfig().storageUrl.avatar + conv.participant.avatar,
             ),
           });
@@ -84,7 +84,7 @@ export class ConversationService {
       };
 
       if (conversation) {
-        addAvatarUrl(conversation);
+        await addAvatarUrl(conversation);
         return {
           success: false,
           message: 'Conversation already exists',
@@ -131,7 +131,7 @@ export class ConversationService {
       });
 
       // add image url
-      addAvatarUrl(conversation);
+      await addAvatarUrl(conversation);
 
       // trigger socket event
       this.messageGateway.server.to(data.creator_id).emit('conversation', {
@@ -225,13 +225,15 @@ export class ConversationService {
       // add image url
       for (const conversation of conversations) {
         if (conversation.creator && conversation.creator.avatar) {
-          conversation.creator['avatar_url'] = SojebStorage.url(
-            appConfig().storageUrl.avatar + conversation.creator.avatar,
+          conversation.creator['avatar_url'] = await SojebStorage.url(
+            appConfig().storageUrl.avatar + '/' + conversation.creator.avatar,
           );
         }
         if (conversation.participant && conversation.participant.avatar) {
-          conversation.participant['avatar_url'] = SojebStorage.url(
-            appConfig().storageUrl.avatar + conversation.participant.avatar,
+          conversation.participant['avatar_url'] = await SojebStorage.url(
+            appConfig().storageUrl.avatar +
+              '/' +
+              conversation.participant.avatar,
           );
         }
       }
@@ -280,12 +282,12 @@ export class ConversationService {
 
       // add image url
       if (conversation.creator.avatar) {
-        conversation.creator['avatar_url'] = SojebStorage.url(
+        conversation.creator['avatar_url'] = await SojebStorage.url(
           appConfig().storageUrl.avatar + conversation.creator.avatar,
         );
       }
       if (conversation.participant.avatar) {
-        conversation.participant['avatar_url'] = SojebStorage.url(
+        conversation.participant['avatar_url'] = await SojebStorage.url(
           appConfig().storageUrl.avatar + conversation.participant.avatar,
         );
       }
@@ -380,17 +382,17 @@ export class ConversationService {
         };
       }
 
-      const addAvatarUrl = (conv) => {
+      const addAvatarUrlAdmin = async (conv) => {
         if (conv.creator?.avatar) {
           Object.assign(conv.creator, {
-            avatar_url: SojebStorage.url(
+            avatar_url: await SojebStorage.url(
               appConfig().storageUrl.avatar + conv.creator.avatar,
             ),
           });
         }
         if (conv.participant?.avatar) {
           Object.assign(conv.participant, {
-            avatar_url: SojebStorage.url(
+            avatar_url: await SojebStorage.url(
               appConfig().storageUrl.avatar + conv.participant.avatar,
             ),
           });
@@ -435,7 +437,7 @@ export class ConversationService {
           },
         });
 
-        addAvatarUrl(conversation);
+        await addAvatarUrlAdmin(conversation);
 
         this.messageGateway.server.to(user_id).emit('conversation', {
           from: user_id,
@@ -461,7 +463,7 @@ export class ConversationService {
           }
         }
       } else {
-        addAvatarUrl(conversation);
+        await addAvatarUrlAdmin(conversation);
       }
 
       return {

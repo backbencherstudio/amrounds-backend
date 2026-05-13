@@ -108,20 +108,20 @@ export class UserService {
 
       const total = await this.prisma.user.count({ where: where_condition });
 
-      users.forEach((user) => {
+      for (const user of users) {
         if (user.avatar) {
-          user['avatar_url'] = SojebStorage.url(
-            appConfig().storageUrl.avatar + user.avatar,
+          user['avatar_url'] = await SojebStorage.url(
+            appConfig().storageUrl.avatar + '/' + user.avatar,
           );
         }
         if (user.verifiy_document) {
-          user['verifiy_document_url'] = SojebStorage.url(
+          user['verifiy_document_url'] = await SojebStorage.url(
             appConfig().storageUrl.verification_doc +
               '/' +
               user.verifiy_document,
           );
         }
-      });
+      }
 
       return {
         success: true,
@@ -164,8 +164,8 @@ export class UserService {
 
       // add avatar url to user
       if (user.avatar) {
-        user['avatar_url'] = SojebStorage.url(
-          appConfig().storageUrl.avatar + user.avatar,
+        user['avatar_url'] = await SojebStorage.url(
+          appConfig().storageUrl.avatar + '/' + user.avatar,
         );
       }
 
@@ -394,13 +394,13 @@ export class UserService {
     const reportData = await Promise.all(
       reports.map(async (report) => {
         if (report.reported?.avatar) {
-          report.reported['avatar_url'] = SojebStorage.url(
-            appConfig().storageUrl.avatar + report.reported.avatar,
+          report.reported['avatar_url'] = await SojebStorage.url(
+            appConfig().storageUrl.avatar + '/' + report.reported.avatar,
           );
         }
         if (report.reporter?.avatar) {
-          report.reporter['avatar_url'] = SojebStorage.url(
-            appConfig().storageUrl.avatar + report.reporter.avatar,
+          report.reporter['avatar_url'] = await SojebStorage.url(
+            appConfig().storageUrl.avatar + '/' + report.reporter.avatar,
           );
         }
 

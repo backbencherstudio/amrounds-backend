@@ -42,7 +42,7 @@ export class QuestionsService {
         try {
           fileName = `${StringHelper.randomString()}${explanation_image.originalname}`;
           await SojebStorage.put(
-            appConfig().storageUrl.question + fileName,
+            appConfig().storageUrl.question + '/' + fileName,
             explanation_image.buffer,
           );
 
@@ -293,8 +293,8 @@ export class QuestionsService {
         if (question.explanation_image.startsWith('http')) {
           explanation_image_url = question.explanation_image;
         } else {
-          explanation_image_url = SojebStorage.url(
-            appConfig().storageUrl.question + question.explanation_image,
+          explanation_image_url = await SojebStorage.url(
+            appConfig().storageUrl.question + '/' + question.explanation_image,
           );
         }
 
@@ -436,13 +436,14 @@ export class QuestionsService {
           if (existingQuestion && existingQuestion.explanation_image) {
             await SojebStorage.delete(
               appConfig().storageUrl.question +
+                '/' +
                 existingQuestion.explanation_image,
             );
           }
 
           fileName = `${StringHelper.randomString()}${explanation_image.originalname}`;
           await SojebStorage.put(
-            appConfig().storageUrl.question + fileName,
+            appConfig().storageUrl.question + '/' + fileName,
             explanation_image.buffer,
           );
 
@@ -497,7 +498,21 @@ export class QuestionsService {
 
   async deleteOneQuestion(id: string) {
     try {
-      const deletedQuestion = await this.prisma.questions.delete({
+      const existingQuestion = await this.prisma.questions.findUnique({
+        where: {
+          id,
+        },
+      });
+
+      if (existingQuestion && existingQuestion.explanation_image) {
+        await SojebStorage.delete(
+          appConfig().storageUrl.question +
+            '/' +
+            existingQuestion.explanation_image,
+        );
+      }
+
+      await this.prisma.questions.delete({
         where: {
           id,
         },

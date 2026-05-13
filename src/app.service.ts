@@ -20,7 +20,7 @@ export class AppService {
         success: true,
         message: 'Image uploaded successfully',
         data: result,
-        url: SojebStorage.url('tony1.jpg'),
+        url: await SojebStorage.url('tony1.jpg'),
       };
     } catch (error) {
       throw new Error(`Failed to upload image: ${error}`);
