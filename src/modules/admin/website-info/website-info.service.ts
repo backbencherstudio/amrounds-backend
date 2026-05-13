@@ -133,13 +133,13 @@ export class WebsiteInfoService {
       });
 
       if (websiteInfo.logo) {
-        websiteInfo['logo_url'] = SojebStorage.url(
+        websiteInfo['logo_url'] = await SojebStorage.url(
           appConfig().storageUrl.websiteInfo + websiteInfo.logo,
         );
       }
 
       if (websiteInfo.favicon) {
-        websiteInfo['favicon_url'] = SojebStorage.url(
+        websiteInfo['favicon_url'] = await SojebStorage.url(
           appConfig().storageUrl.websiteInfo + websiteInfo.favicon,
         );
       }

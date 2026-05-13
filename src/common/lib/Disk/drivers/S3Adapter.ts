@@ -1,48 +1,49 @@
-import * as AWS from 'aws-sdk';
+import {
+  S3Client,
+  HeadObjectCommand,
+  GetObjectCommand,
+  PutObjectCommand,
+  DeleteObjectCommand,
+} from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { IStorage } from './iStorage';
 import { DiskOption } from '../Option';
+import { Readable } from 'stream';
 
 /**
  * S3Adapter for s3 bucket storage
  */
 export class S3Adapter implements IStorage {
   private _config: DiskOption;
-  private s3: AWS.S3;
+  private s3: S3Client;
 
   constructor(config: DiskOption) {
     this._config = config;
-    const awsConfig: AWS.S3.ClientConfiguration = {
+    this.s3 = new S3Client({
       endpoint: this._config.connection.awsEndpoint,
       region: this._config.connection.awsDefaultRegion,
       credentials: {
         accessKeyId: this._config.connection.awsAccessKeyId,
         secretAccessKey: this._config.connection.awsSecretAccessKey,
       },
-    };
-    if (this._config.connection.minio) {
-      // s3ForcePathStyle: true, // Required for MinIO
-      awsConfig['s3ForcePathStyle'] = true;
-    }
-    this.s3 = new AWS.S3({
-      ...awsConfig,
+      forcePathStyle: !!this._config.connection.minio,
     });
   }
 
   /**
    * returns object url
-   *
-   * https://[bucketname].s3.[region].amazonaws.com/[object]
-   * and for minio
-   * http://[endpoint]/[bucketname]/[object]
    * @param key
    * @returns
    */
+  async url(key: string): Promise<string> {
+    const command = new GetObjectCommand({
+      Bucket: this._config.connection.awsBucket,
+      Key: key,
+      // ResponseContentType: 'image/jpeg',
+    });
 
-  url(key: string): string {
-    if (this._config.connection.minio) {
-      return `${this._config.connection.awsEndpoint}/${this._config.connection.awsBucket}/${key}`;
-    }
-    return `https://${this._config.connection.awsBucket}.s3.${this._config.connection.awsDefaultRegion}.amazonaws.com/${key}`;
+    // sign url for 30 minutes (1800 seconds)
+    return await getSignedUrl(this.s3, command, { expiresIn: 1800 });
   }
 
   /**
@@ -52,11 +53,17 @@ export class S3Adapter implements IStorage {
    */
   async isExists(key: string): Promise<boolean> {
     try {
-      const params = { Bucket: this._config.connection.awsBucket, Key: key };
-      await this.s3.headObject(params).promise();
+      const command = new HeadObjectCommand({
+        Bucket: this._config.connection.awsBucket,
+        Key: key,
+      });
+      await this.s3.send(command);
       return true;
-    } catch (error) {
-      if ((error as AWS.AWSError).code === 'NotFound') {
+    } catch (error: any) {
+      if (
+        error.name === 'NotFound' ||
+        error.$metadata?.httpStatusCode === 404
+      ) {
         return false;
       }
       throw error;
@@ -69,9 +76,12 @@ export class S3Adapter implements IStorage {
    */
   async get(key: string) {
     try {
-      const params = { Bucket: this._config.connection.awsBucket, Key: key };
-      const data = this.s3.getObject(params).createReadStream();
-      return data;
+      const command = new GetObjectCommand({
+        Bucket: this._config.connection.awsBucket,
+        Key: key,
+      });
+      const response = await this.s3.send(command);
+      return response.Body as Readable;
     } catch (error) {
       throw new Error(`Failed to get object ${key}: ${error}`);
     }
@@ -82,18 +92,15 @@ export class S3Adapter implements IStorage {
    * @param key
    * @param value
    */
-  async put(
-    key: string,
-    value: Buffer | Uint8Array | string,
-  ): Promise<AWS.S3.ManagedUpload.SendData> {
+  async put(key: string, value: Buffer | Uint8Array | string): Promise<any> {
     try {
-      const params = {
+      const command = new PutObjectCommand({
         Bucket: this._config.connection.awsBucket,
         Key: key,
         Body: value,
-      };
-      const upload = await this.s3.upload(params).promise();
-      return upload;
+      });
+      const response = await this.s3.send(command);
+      return response;
     } catch (error) {
       throw error;
     }
@@ -105,11 +112,17 @@ export class S3Adapter implements IStorage {
    */
   async delete(key: string): Promise<boolean> {
     try {
-      const params = { Bucket: this._config.connection.awsBucket, Key: key };
-      await this.s3.deleteObject(params).promise();
+      const command = new DeleteObjectCommand({
+        Bucket: this._config.connection.awsBucket,
+        Key: key,
+      });
+      await this.s3.send(command);
       return true;
-    } catch (error) {
-      if ((error as AWS.AWSError).code === 'NotFound') {
+    } catch (error: any) {
+      if (
+        error.name === 'NotFound' ||
+        error.$metadata?.httpStatusCode === 404
+      ) {
         return false;
       }
       throw error;

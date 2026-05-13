@@ -69,8 +69,8 @@ export class AuthService {
       }
 
       if (user.avatar) {
-        user['avatar_url'] = SojebStorage.url(
-          appConfig().storageUrl.avatar + user.avatar,
+        user['avatar_url'] = await SojebStorage.url(
+          appConfig().storageUrl.avatar + '/' + user.avatar,
         );
       }
 
@@ -197,7 +197,7 @@ export class AuthService {
       // upload file
       const fileName = `${StringHelper.randomString()}${avatar.originalname}`;
       await SojebStorage.put(
-        appConfig().storageUrl.avatar + fileName,
+        appConfig().storageUrl.avatar + '/' + fileName,
         avatar.buffer,
       );
 

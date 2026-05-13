@@ -22,7 +22,7 @@ export class GCSAdapter implements IStorage {
    * Returns the public URL of the object.
    * @param key
    */
-  url(key: string): string {
+  async url(key: string): Promise<string> {
     if (this._config.connection.gcpApiEndpoint) {
       // If using custom endpoint or emulator
       return `${this._config.connection.gcpApiEndpoint}/${this._config.connection.gcpBucket}/${key}`;
