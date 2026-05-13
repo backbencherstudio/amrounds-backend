@@ -158,21 +158,25 @@ export class LeaderboardService {
       }
     }
 
-    const leaderboard = leaderboardRows.map((row) => ({
-      rank: row.rank,
-      user: {
-        id: row.user_id,
-        name: row.name,
-        institution: row.institution,
-        avatar: row.avatar
-          ? SojebStorage.url(appConfig().storageUrl.avatar + '/' + row.avatar)
-          : null,
-      },
-      tests_completed: row.total_tests,
-      accuracy: row.accuracy || 0,
-      avg_score: Math.round(row.avg_score || 0),
-      trend: (trendsMap.get(row.user_id) || []).reverse(),
-    }));
+    const leaderboard = await Promise.all(
+      leaderboardRows.map(async (row) => ({
+        rank: row.rank,
+        user: {
+          id: row.user_id,
+          name: row.name,
+          institution: row.institution,
+          avatar: row.avatar
+            ? await SojebStorage.url(
+                appConfig().storageUrl.avatar + '/' + row.avatar,
+              )
+            : null,
+        },
+        tests_completed: row.total_tests,
+        accuracy: row.accuracy || 0,
+        avg_score: Math.round(row.avg_score || 0),
+        trend: (trendsMap.get(row.user_id) || []).reverse(),
+      })),
+    );
 
     const currentUserTrend = currentUserTrendsResult
       .map((t) => Math.round(t.score || 0))

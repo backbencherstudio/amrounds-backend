@@ -171,49 +171,51 @@ export class TestService {
         throw new Error('Test not found');
       }
 
-      test.questions = test.questions.map((question: any) => {
-        if (question && question.explanation) {
-          question.explanation = question.explanation.replace(
-            /\\(?=")|\\(?=\/)/g,
-            '',
-          );
-        }
-
-        let explanation_image_url = null;
-        if (question && question.explanation_image) {
-          if (question.explanation_image.startsWith('http')) {
-            explanation_image_url = question.explanation_image;
-          } else {
-            explanation_image_url = SojebStorage.url(
-              appConfig().storageUrl.question + question.explanation_image,
-            );
-          }
-
-          if (question.explanation) {
-            const escapedFileName = question.explanation_image.replace(
-              /[.*+?^${}()|[\]\\]/g,
-              '\\$&',
-            );
-            const regex = new RegExp(
-              `(src=['"])([^'"]*${escapedFileName})(['"])`,
-              'g',
-            );
+      test.questions = await Promise.all(
+        test.questions.map(async (question: any) => {
+          if (question && question.explanation) {
             question.explanation = question.explanation.replace(
-              regex,
-              (match, p1, p2, p3) => {
-                if (p2.startsWith('http')) {
-                  return match;
-                }
-                return `${p1}${explanation_image_url}${p3}`;
-              },
+              /\\(?=")|\\(?=\/)/g,
+              '',
             );
           }
-        }
-        return {
-          ...question,
-          explanation_image_url,
-        };
-      }) as any;
+
+          let explanation_image_url = null;
+          if (question && question.explanation_image) {
+            if (question.explanation_image.startsWith('http')) {
+              explanation_image_url = question.explanation_image;
+            } else {
+              explanation_image_url = await SojebStorage.url(
+                appConfig().storageUrl.question + question.explanation_image,
+              );
+            }
+
+            if (question.explanation) {
+              const escapedFileName = question.explanation_image.replace(
+                /[.*+?^${}()|[\]\\]/g,
+                '\\$&',
+              );
+              const regex = new RegExp(
+                `(src=['"])([^'"]*${escapedFileName})(['"])`,
+                'g',
+              );
+              question.explanation = question.explanation.replace(
+                regex,
+                (match, p1, p2, p3) => {
+                  if (p2.startsWith('http')) {
+                    return match;
+                  }
+                  return `${p1}${explanation_image_url}${p3}`;
+                },
+              );
+            }
+          }
+          return {
+            ...question,
+            explanation_image_url,
+          };
+        }),
+      ) as any;
 
       return {
         success: true,
@@ -365,7 +367,7 @@ export class TestService {
         if (question.explanation_image.startsWith('http')) {
           explanation_image_url = question.explanation_image;
         } else {
-          explanation_image_url = SojebStorage.url(
+          explanation_image_url = await SojebStorage.url(
             appConfig().storageUrl.question + question.explanation_image,
           );
         }
@@ -1279,63 +1281,65 @@ export class TestService {
       });
 
       // 3. Merge data
-      const questionsWithDetails = test.questions.map((question) => {
-        const totalAnswersForQuestion =
-          questionTotalAnswers.get(question.id) || 0;
+      const questionsWithDetails = await Promise.all(
+        test.questions.map(async (question) => {
+          const totalAnswersForQuestion =
+            questionTotalAnswers.get(question.id) || 0;
 
-        const answerOptionsWithStats = question.answerOptions.map((option) => {
-          const count = optionCounts.get(option.id) || 0;
-          const percentage =
-            totalAnswersForQuestion > 0
-              ? (count / totalAnswersForQuestion) * 100
-              : 0;
+          const answerOptionsWithStats = question.answerOptions.map((option) => {
+            const count = optionCounts.get(option.id) || 0;
+            const percentage =
+              totalAnswersForQuestion > 0
+                ? (count / totalAnswersForQuestion) * 100
+                : 0;
+            return {
+              ...option,
+              total_select: Math.round(percentage),
+            };
+          });
+
+          let explanation_image_url = null;
+          let processedExplanation = question.explanation;
+
+          if (question.explanation_image) {
+            if (question.explanation_image.startsWith('http')) {
+              explanation_image_url = question.explanation_image;
+            } else {
+              explanation_image_url = await SojebStorage.url(
+                appConfig().storageUrl.question + question.explanation_image,
+              );
+            }
+
+            if (processedExplanation) {
+              const escapedFileName = question.explanation_image.replace(
+                /[.*+?^${}()|[\]\\]/g,
+                '\\$&',
+              );
+              const regex = new RegExp(
+                `(src=['"])([^'"]*${escapedFileName})(['"])`,
+                'g',
+              );
+              processedExplanation = processedExplanation.replace(
+                regex,
+                (match, p1, p2, p3) => {
+                  if (p2.startsWith('http')) {
+                    return match;
+                  }
+                  return `${p1}${explanation_image_url}${p3}`;
+                },
+              );
+            }
+          }
+
           return {
-            ...option,
-            total_select: Math.round(percentage),
+            ...question,
+            explanation: processedExplanation,
+            explanation_image_url,
+            answerOptions: answerOptionsWithStats,
+            user_selected_option_id: userAnswerMap.get(question.id) || null,
           };
-        });
-
-        let explanation_image_url = null;
-        let processedExplanation = question.explanation;
-
-        if (question.explanation_image) {
-          if (question.explanation_image.startsWith('http')) {
-            explanation_image_url = question.explanation_image;
-          } else {
-            explanation_image_url = SojebStorage.url(
-              appConfig().storageUrl.question + question.explanation_image,
-            );
-          }
-
-          if (processedExplanation) {
-            const escapedFileName = question.explanation_image.replace(
-              /[.*+?^${}()|[\]\\]/g,
-              '\\$&',
-            );
-            const regex = new RegExp(
-              `(src=['"])([^'"]*${escapedFileName})(['"])`,
-              'g',
-            );
-            processedExplanation = processedExplanation.replace(
-              regex,
-              (match, p1, p2, p3) => {
-                if (p2.startsWith('http')) {
-                  return match;
-                }
-                return `${p1}${explanation_image_url}${p3}`;
-              },
-            );
-          }
-        }
-
-        return {
-          ...question,
-          explanation: processedExplanation,
-          explanation_image_url,
-          answerOptions: answerOptionsWithStats,
-          user_selected_option_id: userAnswerMap.get(question.id) || null,
-        };
-      });
+        }),
+      );
 
       // Construct final response, excluding the raw user_answers array if desired,
       // but we need to return the modified questions array.

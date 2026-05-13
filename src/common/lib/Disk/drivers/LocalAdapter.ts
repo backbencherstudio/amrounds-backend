@@ -19,7 +19,7 @@ export class LocalAdapter implements IStorage {
    * @param key
    * @returns
    */
-  url(key: string): string {
+  async url(key: string): Promise<string> {
     const publicUrl = this._config.connection.publicUrl.replace(/\/$/, '');
     const cleanKey = key.replace(/^\//, '');
     return `${process.env.APP_URL}${publicUrl}/${cleanKey}`;

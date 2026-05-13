@@ -94,7 +94,7 @@ export class MessageService {
               message_id: message.id,
             },
           });
-          attachment['file_url'] = SojebStorage.url(
+          attachment['file_url'] = await SojebStorage.url(
             appConfig().storageUrl.attachment + '/' + fileName,
           );
           attachments.push(attachment);
@@ -206,7 +206,7 @@ export class MessageService {
               message_id: message.id,
             },
           });
-          attachment['file_url'] = SojebStorage.url(
+          attachment['file_url'] = await SojebStorage.url(
             appConfig().storageUrl.attachment + '/' + fileName,
           );
           attachments.push(attachment);
@@ -359,8 +359,8 @@ export class MessageService {
       for (const message of messages) {
         if (message.attachments) {
           for (const attachment of message.attachments) {
-            attachment['file_url'] = SojebStorage.url(
-              appConfig().storageUrl.attachment + attachment.file,
+            attachment['file_url'] = await SojebStorage.url(
+              appConfig().storageUrl.attachment + '/' + attachment.file,
             );
           }
         }
@@ -369,13 +369,13 @@ export class MessageService {
       // add image url
       for (const message of messages) {
         if (message.sender && message.sender.avatar) {
-          message.sender['avatar_url'] = SojebStorage.url(
-            appConfig().storageUrl.avatar + message.sender.avatar,
+          message.sender['avatar_url'] = await SojebStorage.url(
+            appConfig().storageUrl.avatar + '/' + message.sender.avatar,
           );
         }
         if (message.receiver && message.receiver.avatar) {
-          message.receiver['avatar_url'] = SojebStorage.url(
-            appConfig().storageUrl.avatar + message.receiver.avatar,
+          message.receiver['avatar_url'] = await SojebStorage.url(
+            appConfig().storageUrl.avatar + '/' + message.receiver.avatar,
           );
         }
       }
