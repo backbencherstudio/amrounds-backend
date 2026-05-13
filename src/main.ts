@@ -63,7 +63,7 @@ async function bootstrap() {
 
   // storage setup
   SojebStorage.config({
-    driver: 'local',
+    driver: 's3',
     connection: {
       rootUrl: appConfig().storageUrl.rootUrl,
       publicUrl: appConfig().storageUrl.rootUrlPublic,
@@ -73,7 +73,7 @@ async function bootstrap() {
       awsSecretAccessKey: appConfig().fileSystems.s3.secret,
       awsDefaultRegion: appConfig().fileSystems.s3.region,
       awsEndpoint: appConfig().fileSystems.s3.endpoint,
-      minio: true,
+      minio: process.env.AWS_USE_MINIO === 'true',
       // google cloud storage
       gcpProjectId: appConfig().fileSystems.gcs.projectId,
       gcpKeyFile: appConfig().fileSystems.gcs.keyFile,

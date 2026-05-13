@@ -18,7 +18,7 @@ export interface IStorage {
    * get file url
    * @param key
    */
-  url(key: string): string;
+  url(key: string): Promise<string>;
 
   /**
    * put data

@@ -20,8 +20,8 @@ export class StorageClass {
    * @param key
    * @returns
    */
-  public url(key: string) {
-    return this.adapter.url(key);
+  public async url(key: string): Promise<string> {
+    return await this.adapter.url(key);
   }
 
   /**
