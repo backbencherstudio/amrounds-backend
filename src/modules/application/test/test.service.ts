@@ -171,7 +171,7 @@ export class TestService {
         throw new Error('Test not found');
       }
 
-      test.questions = await Promise.all(
+      test.questions = (await Promise.all(
         test.questions.map(async (question: any) => {
           if (question && question.explanation) {
             question.explanation = question.explanation.replace(
@@ -186,7 +186,9 @@ export class TestService {
               explanation_image_url = question.explanation_image;
             } else {
               explanation_image_url = await SojebStorage.url(
-                appConfig().storageUrl.question + question.explanation_image,
+                appConfig().storageUrl.question +
+                  '/' +
+                  question.explanation_image,
               );
             }
 
@@ -215,7 +217,7 @@ export class TestService {
             explanation_image_url,
           };
         }),
-      ) as any;
+      )) as any;
 
       return {
         success: true,
@@ -368,7 +370,7 @@ export class TestService {
           explanation_image_url = question.explanation_image;
         } else {
           explanation_image_url = await SojebStorage.url(
-            appConfig().storageUrl.question + question.explanation_image,
+            appConfig().storageUrl.question + '/' + question.explanation_image,
           );
         }
 
@@ -1286,17 +1288,19 @@ export class TestService {
           const totalAnswersForQuestion =
             questionTotalAnswers.get(question.id) || 0;
 
-          const answerOptionsWithStats = question.answerOptions.map((option) => {
-            const count = optionCounts.get(option.id) || 0;
-            const percentage =
-              totalAnswersForQuestion > 0
-                ? (count / totalAnswersForQuestion) * 100
-                : 0;
-            return {
-              ...option,
-              total_select: Math.round(percentage),
-            };
-          });
+          const answerOptionsWithStats = question.answerOptions.map(
+            (option) => {
+              const count = optionCounts.get(option.id) || 0;
+              const percentage =
+                totalAnswersForQuestion > 0
+                  ? (count / totalAnswersForQuestion) * 100
+                  : 0;
+              return {
+                ...option,
+                total_select: Math.round(percentage),
+              };
+            },
+          );
 
           let explanation_image_url = null;
           let processedExplanation = question.explanation;
@@ -1306,7 +1310,9 @@ export class TestService {
               explanation_image_url = question.explanation_image;
             } else {
               explanation_image_url = await SojebStorage.url(
-                appConfig().storageUrl.question + question.explanation_image,
+                appConfig().storageUrl.question +
+                  '/' +
+                  question.explanation_image,
               );
             }
 
