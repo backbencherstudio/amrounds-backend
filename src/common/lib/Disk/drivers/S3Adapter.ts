@@ -42,8 +42,8 @@ export class S3Adapter implements IStorage {
       // ResponseContentType: 'image/jpeg',
     });
 
-    // sign url for 30 minutes (1800 seconds)
-    return await getSignedUrl(this.s3, command, { expiresIn: 1800 });
+    // sign url for 7 days (604800 seconds)
+    return await getSignedUrl(this.s3, command, { expiresIn: 604800 });
   }
 
   /**
