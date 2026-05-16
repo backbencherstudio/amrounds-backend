@@ -6,7 +6,7 @@ import appConfig from 'src/config/app.config';
 
 @Injectable()
 export class LeaderboardService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   async getLeaderboard(userId: string, query: GetLeaderboardDto) {
     let { period = 'week', search, page = 1, limit = 10, filter } = query;
@@ -94,6 +94,9 @@ export class LeaderboardService {
           u.name,
           u.avatar,
           u.current_practice as institution,
+          u.address,
+          u.country,
+          u.state,
           RANK() OVER (ORDER BY r.avg_score DESC, r.total_tests DESC)::int as rank
         FROM ranked_users r
         JOIN users u ON r.user_id = u.id
@@ -101,7 +104,7 @@ export class LeaderboardService {
       )
       SELECT * FROM visible_leaderboard
       WHERE 
-        ($1::text IS NULL OR name ILIKE $1 OR institution ILIKE $1)
+        ($1::text IS NULL OR name ILIKE $1 OR institution ILIKE $1 OR address ILIKE $1 OR country ILIKE $1 OR state ILIKE $1)
       ORDER BY rank ASC
       LIMIT $2 OFFSET $3
     `,
@@ -165,6 +168,9 @@ export class LeaderboardService {
           id: row.user_id,
           name: row.name,
           institution: row.institution,
+          address: row.address,
+          country: row.country,
+          state: row.state,
           avatar: row.avatar
             ? await SojebStorage.url(
                 appConfig().storageUrl.avatar + '/' + row.avatar,
@@ -189,12 +195,12 @@ export class LeaderboardService {
       data: {
         user_stats: currentUserStatsRow
           ? {
-            rank: currentUserStatsRow.rank,
-            tests_completed: currentUserStatsRow.total_tests,
-            accuracy: currentUserStatsRow.accuracy || 0,
-            current_streak: currentStreak,
-            trend: currentUserTrend,
-          }
+              rank: currentUserStatsRow.rank,
+              tests_completed: currentUserStatsRow.total_tests,
+              accuracy: currentUserStatsRow.accuracy || 0,
+              current_streak: currentStreak,
+              trend: currentUserTrend,
+            }
           : null,
         leaderboard,
         meta: {
