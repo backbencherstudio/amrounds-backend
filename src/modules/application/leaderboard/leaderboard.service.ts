@@ -95,6 +95,7 @@ export class LeaderboardService {
           u.avatar,
           u.current_practice as institution,
           u.address,
+          u.city,
           u.country,
           u.state,
           RANK() OVER (ORDER BY r.avg_score DESC, r.total_tests DESC)::int as rank
@@ -104,7 +105,13 @@ export class LeaderboardService {
       )
       SELECT * FROM visible_leaderboard
       WHERE 
-        ($1::text IS NULL OR name ILIKE $1 OR institution ILIKE $1 OR address ILIKE $1 OR country ILIKE $1 OR state ILIKE $1)
+        ($1::text IS NULL OR 
+         COALESCE(name, '') ILIKE $1 OR 
+         COALESCE(institution, '') ILIKE $1 OR 
+         COALESCE(address, '') ILIKE $1 OR 
+         COALESCE(city, '') ILIKE $1 OR 
+         COALESCE(country, '') ILIKE $1 OR 
+         COALESCE(state, '') ILIKE $1)
       ORDER BY rank ASC
       LIMIT $2 OFFSET $3
     `,
@@ -169,6 +176,7 @@ export class LeaderboardService {
           name: row.name,
           institution: row.institution,
           address: row.address,
+          city: row.city,
           country: row.country,
           state: row.state,
           avatar: row.avatar
