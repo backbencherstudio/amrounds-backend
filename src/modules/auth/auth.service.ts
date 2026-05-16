@@ -243,9 +243,10 @@ export class AuthService {
             'Your account has been rejected, please contact support',
           );
         }
-        // if (user.status == 0 || user.email_verified_at == null) {
-        //   throw new UnauthorizedException('User not verified');
-        // }
+        if (user.status == 0 || user.email_verified_at == null) {
+          throw new UnauthorizedException('Please verify your email to login');
+        }
+
         if (user.approved_at == null || !user.approved) {
           throw new UnauthorizedException(
             'User not approved! Please wait for approval',
