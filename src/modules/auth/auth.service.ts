@@ -27,7 +27,7 @@ export class AuthService {
     private notificationRepository: NotificationRepository,
     private messageGateway: MessageGateway,
     @InjectRedis() private readonly redis: Redis,
-  ) {}
+  ) { }
 
   async createActivity(activityDto: { title?: string; description?: string }) {
     try {
@@ -458,9 +458,8 @@ export class AuthService {
       // upload verification doc
       let verificationDocName = null;
       if (verification_doc) {
-        verificationDocName = `${StringHelper.randomString()}${
-          verification_doc.originalname
-        }`;
+        verificationDocName = `${StringHelper.randomString()}${verification_doc.originalname
+          }`;
         await SojebStorage.put(
           appConfig().storageUrl.verification_doc + '/' + verificationDocName,
           verification_doc.buffer,
