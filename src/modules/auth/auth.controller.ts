@@ -32,7 +32,7 @@ import { AuthGuard } from '@nestjs/passport';
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService) { }
 
   @ApiOperation({ summary: 'Get user details' })
   @ApiBearerAuth()
@@ -138,9 +138,6 @@ export class AuthController {
         'Training practice not provided',
         HttpStatus.BAD_REQUEST,
       );
-    }
-    if (!address) {
-      throw new HttpException('Address not provided', HttpStatus.BAD_REQUEST);
     }
     if (!country) {
       throw new HttpException('Country not provided', HttpStatus.BAD_REQUEST);
