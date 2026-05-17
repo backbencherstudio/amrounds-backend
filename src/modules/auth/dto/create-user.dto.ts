@@ -39,13 +39,13 @@ export class CreateUserDto {
   @ApiProperty()
   state: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @ApiProperty()
-  address: string;
+  address?: string;
 
   @IsOptional()
   @ApiProperty()
-  current_practice: string;
+  current_practice?: string;
 
   @IsOptional()
   @ApiProperty()
