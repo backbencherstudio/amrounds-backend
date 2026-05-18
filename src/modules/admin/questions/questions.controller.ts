@@ -10,6 +10,7 @@ import {
   Req,
   UseInterceptors,
   UploadedFile,
+  UploadedFiles,
   BadRequestException,
   Query,
 } from '@nestjs/common';
@@ -21,7 +22,7 @@ import { JwtAuthGuard } from 'src/modules/auth/guards/jwt-auth.guard';
 import { Roles } from 'src/common/guard/role/roles.decorator';
 import { Role } from 'src/common/guard/role/role.enum';
 import { Request } from 'express';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FileFieldsInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 
 @ApiBearerAuth()
@@ -34,9 +35,14 @@ export class QuestionsController {
 
   @Post()
   @UseInterceptors(
-    FileInterceptor('explanation_image', {
-      storage: memoryStorage(),
-      limits: {
+    FileFieldsInterceptor(
+      [
+        { name: 'explanation_image', maxCount: 1 },
+        { name: 'steam_image', maxCount: 1 },
+      ],
+      {
+        storage: memoryStorage(),
+        limits: {
         fileSize: 15 * 1024 * 1024,
         fieldSize: 15 * 1024 * 1024,
       },
@@ -54,13 +60,21 @@ export class QuestionsController {
   createOneQuestion(
     @Req() req: Request,
     @Body() createQuestionDto: CreateQuestionDto,
-    @UploadedFile() explanation_image: Express.Multer.File,
+    @UploadedFiles()
+    files: {
+      explanation_image?: Express.Multer.File[];
+      steam_image?: Express.Multer.File[];
+    },
   ) {
     const userId = req.user.userId;
+    const explanation_image = files?.explanation_image?.[0];
+    const steam_image = files?.steam_image?.[0];
+
     return this.questionsService.createOneQuestion(
       userId,
       createQuestionDto,
       explanation_image,
+      steam_image,
     );
   }
 
@@ -84,9 +98,14 @@ export class QuestionsController {
 
   @Patch(':id')
   @UseInterceptors(
-    FileInterceptor('explanation_image', {
-      storage: memoryStorage(),
-      limits: {
+    FileFieldsInterceptor(
+      [
+        { name: 'explanation_image', maxCount: 1 },
+        { name: 'steam_image', maxCount: 1 },
+      ],
+      {
+        storage: memoryStorage(),
+        limits: {
         fileSize: 10 * 1024 * 1024,
         fieldSize: 10 * 1024 * 1024,
       },
@@ -104,12 +123,20 @@ export class QuestionsController {
   updateOneQuestion(
     @Param('id') id: string,
     @Body() updateQuestionDto: UpdateQuestionDto,
-    @UploadedFile() explanation_image: Express.Multer.File,
+    @UploadedFiles()
+    files: {
+      explanation_image?: Express.Multer.File[];
+      steam_image?: Express.Multer.File[];
+    },
   ) {
+    const explanation_image = files?.explanation_image?.[0];
+    const steam_image = files?.steam_image?.[0];
+
     return this.questionsService.updateOneQuestion(
       id,
       updateQuestionDto,
       explanation_image,
+      steam_image,
     );
   }
 

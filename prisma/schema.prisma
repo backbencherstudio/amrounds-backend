@@ -485,6 +485,7 @@ model Questions {
   question_id String?
 
   question_steam String?
+  steam_image    String?
   question_title String?
 
   explanation       String?
