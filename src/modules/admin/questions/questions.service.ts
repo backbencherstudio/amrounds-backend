@@ -18,6 +18,7 @@ export class QuestionsService {
     id: string,
     createQuestionDto: CreateQuestionDto,
     explanation_image: Express.Multer.File,
+    steam_image?: Express.Multer.File,
   ) {
     try {
       const { question_steam, answerOptions, explanation, ...rest } =
@@ -37,6 +38,28 @@ export class QuestionsService {
 
       let fileName: string | null = null;
       let finalExplanation = explanation;
+
+      let steamFileName: string | null = null;
+      let finalQuestionSteam = question_steam;
+
+      if (steam_image) {
+        try {
+          steamFileName = `${StringHelper.randomString()}${steam_image.originalname}`;
+          await SojebStorage.put(
+            appConfig().storageUrl.question + '/' + steamFileName,
+            steam_image.buffer,
+          );
+
+          if (finalQuestionSteam) {
+            finalQuestionSteam = finalQuestionSteam.replace(
+              steam_image.originalname,
+              steamFileName,
+            );
+          }
+        } catch {
+          throw new InternalServerErrorException('Failed to upload steam image');
+        }
+      }
 
       if (explanation_image) {
         try {
@@ -60,11 +83,12 @@ export class QuestionsService {
       const newQuestion = await this.prisma.questions.create({
         data: {
           ...rest,
-          question_steam: question_steam,
+          question_steam: finalQuestionSteam,
           explanation: finalExplanation,
           user_id: id,
           question_id: questionId,
           explanation_image: fileName,
+          steam_image: steamFileName,
           answerOptions: {
             create: answerOptions,
           },
@@ -262,6 +286,7 @@ export class QuestionsService {
           id: true,
           question_id: true,
           question_steam: true,
+          steam_image: true,
           question_title: true,
           difficulty: true,
           topic: true,
@@ -288,7 +313,46 @@ export class QuestionsService {
         );
       }
 
+      if (question && question.question_steam) {
+        question.question_steam = question.question_steam.replace(
+          /\\(?=")|\\(?=\/)/g,
+          '',
+        );
+      }
+
       let explanation_image_url = null;
+      let steam_image_url = null;
+
+      if (question && question.steam_image) {
+        if (question.steam_image.startsWith('http')) {
+          steam_image_url = question.steam_image;
+        } else {
+          steam_image_url = await SojebStorage.url(
+            appConfig().storageUrl.question + '/' + question.steam_image,
+          );
+        }
+
+        if (question.question_steam) {
+          const escapedFileName = question.steam_image.replace(
+            /[.*+?^${}()|[\]\\]/g,
+            '\\$&',
+          );
+          const regex = new RegExp(
+            `(src=['"])([^'"]*${escapedFileName})(['"])`,
+            'g',
+          );
+          question.question_steam = question.question_steam.replace(
+            regex,
+            (match, p1, p2, p3) => {
+              if (p2.startsWith('http')) {
+                return match;
+              }
+              return `${p1}${steam_image_url}${p3}`;
+            },
+          );
+        }
+      }
+
       if (question && question.explanation_image) {
         if (question.explanation_image.startsWith('http')) {
           explanation_image_url = question.explanation_image;
@@ -325,6 +389,7 @@ export class QuestionsService {
         data: {
           ...question,
           explanation_image_url,
+          steam_image_url,
         },
       };
     } catch (error) {
@@ -339,6 +404,7 @@ export class QuestionsService {
     id: string,
     updateQuestionDto: UpdateQuestionDto,
     explanation_image: Express.Multer.File,
+    steam_image?: Express.Multer.File,
   ) {
     try {
       const {
@@ -423,6 +489,57 @@ export class QuestionsService {
       let fileName: string | null = null;
       let finalExplanation = explanation;
 
+      let steamFileName: string | null = null;
+      let finalQuestionSteam = question_steam;
+
+      if (steam_image) {
+        try {
+          // get existing question
+          const existingQuestion = await this.prisma.questions.findUnique({
+            where: {
+              id,
+            },
+          });
+
+          // delete old file
+          if (existingQuestion && existingQuestion.steam_image) {
+            await SojebStorage.delete(
+              appConfig().storageUrl.question +
+                '/' +
+                existingQuestion.steam_image,
+            );
+          }
+
+          steamFileName = `${StringHelper.randomString()}${steam_image.originalname}`;
+          await SojebStorage.put(
+            appConfig().storageUrl.question + '/' + steamFileName,
+            steam_image.buffer,
+          );
+
+          if (!finalQuestionSteam && existingQuestion) {
+            finalQuestionSteam = existingQuestion.question_steam;
+          }
+
+          let stringToReplace = steam_image.originalname;
+          if (
+            !question_steam &&
+            existingQuestion &&
+            existingQuestion.steam_image
+          ) {
+            stringToReplace = existingQuestion.steam_image;
+          }
+
+          if (finalQuestionSteam) {
+            finalQuestionSteam = finalQuestionSteam.replace(
+              stringToReplace,
+              steamFileName,
+            );
+          }
+        } catch {
+          throw new InternalServerErrorException('Failed to upload steam image');
+        }
+      }
+
       if (explanation_image) {
         try {
           // get existing question
@@ -478,6 +595,13 @@ export class QuestionsService {
         data.explanation = finalExplanation;
       }
 
+      if (steamFileName) {
+        data.steam_image = steamFileName;
+      }
+      if (finalQuestionSteam) {
+        data.question_steam = finalQuestionSteam;
+      }
+
       const updatedQuestion = await this.prisma.questions.update({
         where: {
           id,
@@ -509,6 +633,14 @@ export class QuestionsService {
           appConfig().storageUrl.question +
             '/' +
             existingQuestion.explanation_image,
+        );
+      }
+
+      if (existingQuestion && existingQuestion.steam_image) {
+        await SojebStorage.delete(
+          appConfig().storageUrl.question +
+            '/' +
+            existingQuestion.steam_image,
         );
       }
 
