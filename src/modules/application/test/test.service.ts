@@ -136,6 +136,7 @@ export class TestService {
               id: true,
               question_id: true,
               question_steam: true,
+              steam_image: true,
               question_title: true,
               explanation: true,
               explanation_image: true,
@@ -180,7 +181,16 @@ export class TestService {
             );
           }
 
+          if (question && question.question_steam) {
+            question.question_steam = question.question_steam.replace(
+              /\\(?=")|\\(?=\/)/g,
+              '',
+            );
+          }
+
           let explanation_image_url = null;
+          let steam_image_url = null;
+
           if (question && question.explanation_image) {
             if (question.explanation_image.startsWith('http')) {
               explanation_image_url = question.explanation_image;
@@ -212,9 +222,41 @@ export class TestService {
               );
             }
           }
+
+          if (question && question.steam_image) {
+            if (question.steam_image.startsWith('http')) {
+              steam_image_url = question.steam_image;
+            } else {
+              steam_image_url = await SojebStorage.url(
+                appConfig().storageUrl.question + '/' + question.steam_image,
+              );
+            }
+
+            if (question.question_steam) {
+              const escapedFileName = question.steam_image.replace(
+                /[.*+?^${}()|[\]\\]/g,
+                '\\$&',
+              );
+              const regex = new RegExp(
+                `(src=['"])([^'"]*${escapedFileName})(['"])`,
+                'g',
+              );
+              question.question_steam = question.question_steam.replace(
+                regex,
+                (match, p1, p2, p3) => {
+                  if (p2.startsWith('http')) {
+                    return match;
+                  }
+                  return `${p1}${steam_image_url}${p3}`;
+                },
+              );
+            }
+          }
+
           return {
             ...question,
             explanation_image_url,
+            steam_image_url,
           };
         }),
       )) as any;
@@ -314,6 +356,7 @@ export class TestService {
         select: {
           id: true,
           question_steam: true,
+          steam_image: true,
           question_title: true,
           explanation: true,
           explanation_image: true,
@@ -365,6 +408,52 @@ export class TestService {
       });
 
       let explanation_image_url = null;
+      let steam_image_url = null;
+
+      if (question && question.explanation) {
+        question.explanation = question.explanation.replace(
+          /\\(?=")|\\(?=\/)/g,
+          '',
+        );
+      }
+
+      if (question && question.question_steam) {
+        question.question_steam = question.question_steam.replace(
+          /\\(?=")|\\(?=\/)/g,
+          '',
+        );
+      }
+
+      if (question && question.steam_image) {
+        if (question.steam_image.startsWith('http')) {
+          steam_image_url = question.steam_image;
+        } else {
+          steam_image_url = await SojebStorage.url(
+            appConfig().storageUrl.question + '/' + question.steam_image,
+          );
+        }
+
+        if (question.question_steam) {
+          const escapedFileName = question.steam_image.replace(
+            /[.*+?^${}()|[\]\\]/g,
+            '\\$&',
+          );
+          const regex = new RegExp(
+            `(src=['"])([^'"]*${escapedFileName})(['"])`,
+            'g',
+          );
+          question.question_steam = question.question_steam.replace(
+            regex,
+            (match, p1, p2, p3) => {
+              if (p2.startsWith('http')) {
+                return match;
+              }
+              return `${p1}${steam_image_url}${p3}`;
+            },
+          );
+        }
+      }
+
       if (question && question.explanation_image) {
         if (question.explanation_image.startsWith('http')) {
           explanation_image_url = question.explanation_image;
@@ -403,6 +492,7 @@ export class TestService {
           selected_option_id: userAnswer.selected_option_id,
           user_answer_id: userAnswer.id,
           explanation_image_url,
+          steam_image_url,
           ...question,
           answerOptions: answerOptionsWithStats,
         },
@@ -586,6 +676,7 @@ export class TestService {
             select: {
               id: true,
               question_steam: true,
+              steam_image: true,
               answerOptions: { select: { id: true, option_text: true } },
             },
           },
@@ -595,6 +686,54 @@ export class TestService {
       if (!test) {
         throw new Error('Test not found');
       }
+
+      test.questions = (await Promise.all(
+        test.questions.map(async (question: any) => {
+          let steam_image_url = null;
+
+          if (question && question.question_steam) {
+            question.question_steam = question.question_steam.replace(
+              /\\(?=")|\\(?=\/)/g,
+              '',
+            );
+          }
+
+          if (question && question.steam_image) {
+            if (question.steam_image.startsWith('http')) {
+              steam_image_url = question.steam_image;
+            } else {
+              steam_image_url = await SojebStorage.url(
+                appConfig().storageUrl.question + '/' + question.steam_image,
+              );
+            }
+
+            if (question.question_steam) {
+              const escapedFileName = question.steam_image.replace(
+                /[.*+?^${}()|[\]\\]/g,
+                '\\$&',
+              );
+              const regex = new RegExp(
+                `(src=['"])([^'"]*${escapedFileName})(['"])`,
+                'g',
+              );
+              question.question_steam = question.question_steam.replace(
+                regex,
+                (match, p1, p2, p3) => {
+                  if (p2.startsWith('http')) {
+                    return match;
+                  }
+                  return `${p1}${steam_image_url}${p3}`;
+                },
+              );
+            }
+          }
+
+          return {
+            ...question,
+            steam_image_url,
+          };
+        }),
+      )) as any;
 
       return {
         success: true,
@@ -1214,6 +1353,7 @@ export class TestService {
             select: {
               id: true,
               question_steam: true,
+              steam_image: true,
               question_title: true,
               explanation: true,
               explanation_image: true,
@@ -1303,7 +1443,10 @@ export class TestService {
           );
 
           let explanation_image_url = null;
+          let steam_image_url = null;
+
           let processedExplanation = question.explanation;
+          let processedQuestionSteam = question.question_steam;
 
           if (question.explanation_image) {
             if (question.explanation_image.startsWith('http')) {
@@ -1337,10 +1480,42 @@ export class TestService {
             }
           }
 
+          if (question.steam_image) {
+            if (question.steam_image.startsWith('http')) {
+              steam_image_url = question.steam_image;
+            } else {
+              steam_image_url = await SojebStorage.url(
+                appConfig().storageUrl.question + '/' + question.steam_image,
+              );
+            }
+
+            if (processedQuestionSteam) {
+              const escapedFileName = question.steam_image.replace(
+                /[.*+?^${}()|[\]\\]/g,
+                '\\$&',
+              );
+              const regex = new RegExp(
+                `(src=['"])([^'"]*${escapedFileName})(['"])`,
+                'g',
+              );
+              processedQuestionSteam = processedQuestionSteam.replace(
+                regex,
+                (match, p1, p2, p3) => {
+                  if (p2.startsWith('http')) {
+                    return match;
+                  }
+                  return `${p1}${steam_image_url}${p3}`;
+                },
+              );
+            }
+          }
+
           return {
             ...question,
             explanation: processedExplanation,
+            question_steam: processedQuestionSteam,
             explanation_image_url,
+            steam_image_url,
             answerOptions: answerOptionsWithStats,
             user_selected_option_id: userAnswerMap.get(question.id) || null,
           };
