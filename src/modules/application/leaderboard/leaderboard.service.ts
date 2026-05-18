@@ -38,7 +38,10 @@ export class LeaderboardService {
       havingClause = 'AND accuracy >= 50';
     }
     const statsQuery = (forUser?: string) => `
-      WITH base_stats AS (
+      WITH total_questions AS (
+        SELECT COUNT(*)::numeric as total_count FROM questions
+      ),
+      base_stats AS (
         SELECT
           t.user_id,
           COUNT(*)::int as total_tests,
@@ -59,14 +62,25 @@ export class LeaderboardService {
         GROUP BY ua.user_id
         ${forUser ? `HAVING ua.user_id = '${forUser}'` : ''} 
       ),
+      user_all_time_progress AS (
+        SELECT 
+           ua.user_id,
+           COUNT(DISTINCT ua.question_id)::numeric as completed_questions_count
+        FROM user_answers ua
+        GROUP BY ua.user_id
+        ${forUser ? `HAVING ua.user_id = '${forUser}'` : ''} 
+      ),
       combined_stats AS (
         SELECT 
           b.user_id,
           b.total_tests,
           b.avg_score,
-          COALESCE(a.accuracy, 0) as accuracy
+          COALESCE(a.accuracy, 0) as accuracy,
+          COALESCE(p.completed_questions_count, 0) as completed_questions_count,
+          (SELECT total_count FROM total_questions) as total_questions_count
         FROM base_stats b
         LEFT JOIN user_accuracies a ON b.user_id = a.user_id
+        LEFT JOIN user_all_time_progress p ON b.user_id = p.user_id
       ),
       ranked_users AS (
         SELECT
@@ -74,6 +88,11 @@ export class LeaderboardService {
           total_tests,
           avg_score,
           accuracy,
+          CASE 
+            WHEN total_questions_count > 0 THEN 
+               ROUND((completed_questions_count / total_questions_count) * 100)::int
+            ELSE 0
+          END as completion_percentage,
           RANK() OVER (ORDER BY avg_score DESC, total_tests DESC)::int as rank
         FROM combined_stats
         WHERE 1=1 ${havingClause}
@@ -91,6 +110,7 @@ export class LeaderboardService {
           r.total_tests,
           r.avg_score,
           r.accuracy,
+          r.completion_percentage,
           u.name,
           u.avatar,
           u.current_practice as institution,
@@ -127,7 +147,8 @@ export class LeaderboardService {
       SELECT
         r.rank,
         r.total_tests,
-        r.accuracy
+        r.accuracy,
+        r.completion_percentage
       FROM ranked_users r
       WHERE r.user_id = $1
     `,
@@ -187,6 +208,7 @@ export class LeaderboardService {
         },
         tests_completed: row.total_tests,
         accuracy: row.accuracy || 0,
+        completion_percentage: row.completion_percentage || 0,
         avg_score: Math.round(row.avg_score || 0),
         trend: (trendsMap.get(row.user_id) || []).reverse(),
       })),
@@ -206,6 +228,7 @@ export class LeaderboardService {
               rank: currentUserStatsRow.rank,
               tests_completed: currentUserStatsRow.total_tests,
               accuracy: currentUserStatsRow.accuracy || 0,
+              completion_percentage: currentUserStatsRow.completion_percentage || 0,
               current_streak: currentStreak,
               trend: currentUserTrend,
             }
