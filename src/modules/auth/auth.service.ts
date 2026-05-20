@@ -175,11 +175,15 @@ export class AuthService {
       data.is_public = updateUserDto.is_public;
     }
     if (updateUserDto.password) {
-      data.password = await this.changePassword({
+      const passwordResult = await this.changePassword({
         user_id: userId,
         oldPassword: updateUserDto.password,
         newPassword: updateUserDto.new_password,
       });
+
+      if (!passwordResult.success) {
+        return passwordResult;
+      }
     }
 
     if (avatar) {
