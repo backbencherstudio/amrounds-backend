@@ -22,7 +22,7 @@ import { Request } from 'express';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('chat/conversation')
 export class ConversationController {
-  constructor(private readonly conversationService: ConversationService) {}
+  constructor(private readonly conversationService: ConversationService) { }
 
   @Roles(Role.USER)
   @ApiOperation({ summary: 'Create conversation' })
@@ -33,7 +33,7 @@ export class ConversationController {
   ) {
     try {
       // console.log(req.user.userId);
-      const conversation = await this.conversationService.create(
+      const conversation = await this.conversationService.createConversation(
         req.user.userId,
         createConversationDto,
       );

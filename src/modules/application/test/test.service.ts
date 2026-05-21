@@ -11,7 +11,7 @@ import { PaginationDto, TestHistoryDto } from './dto/query-test.dto';
 
 @Injectable()
 export class TestService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async createOneTest(user_id: string, createTestDto: CreateTestDto) {
     try {
@@ -197,8 +197,8 @@ export class TestService {
             } else {
               explanation_image_url = await SojebStorage.url(
                 appConfig().storageUrl.question +
-                  '/' +
-                  question.explanation_image,
+                '/' +
+                question.explanation_image,
               );
             }
 
@@ -1454,8 +1454,8 @@ export class TestService {
             } else {
               explanation_image_url = await SojebStorage.url(
                 appConfig().storageUrl.question +
-                  '/' +
-                  question.explanation_image,
+                '/' +
+                question.explanation_image,
               );
             }
 
