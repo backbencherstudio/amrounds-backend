@@ -116,6 +116,7 @@ export class AuthController {
     const country = data.country;
     const state = data.state;
     const type = 'user';
+    const specialty = data.specialty;
 
     if (!name) {
       throw new HttpException('Name not provided', HttpStatus.BAD_REQUEST);
@@ -158,6 +159,7 @@ export class AuthController {
       training_practice: training_practice,
       address: address,
       current_practice: data.current_practice,
+      specialty: data.specialty,
       bio: data.bio,
       instagram: data.instagram,
       linkedin: data.linkedin,
