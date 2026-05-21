@@ -1352,6 +1352,7 @@ export class TestService {
           questions: {
             select: {
               id: true,
+              question_id: true,
               question_steam: true,
               steam_image: true,
               question_title: true,

@@ -3,7 +3,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class StatisticService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async getStatistics(user_id: string) {
     const [
@@ -13,6 +13,9 @@ export class StatisticService {
       topicStats,
       totalQuestionsByTopicRaw,
       topicRankRaw,
+      difficultyStats,
+      totalQuestionsByDifficultyRaw,
+      difficultyRankRaw,
     ] = await Promise.all([
       this.prisma.$queryRaw<
         { avg_score: number | null; total: number; completed: number }[]
@@ -96,6 +99,57 @@ export class StatisticService {
         ) ranked
         WHERE user_id = ${user_id}
       `,
+
+      this.prisma.$queryRaw<
+        {
+          difficulty: string;
+          attempted: number;
+          correct: number;
+          used_questions: number;
+        }[]
+      >`
+        SELECT
+          q.difficulty::text as difficulty,
+          COUNT(*)::int as attempted,
+          COUNT(CASE WHEN ua.is_correct = true THEN 1 END)::int as correct,
+          COUNT(DISTINCT ua.question_id)::int as used_questions
+        FROM user_answers ua
+        JOIN questions q ON ua.question_id = q.id
+        WHERE ua.user_id = ${user_id} AND ua.is_correct IS NOT NULL AND q.difficulty IS NOT NULL
+        GROUP BY q.difficulty
+      `,
+
+      this.prisma.$queryRaw<{ difficulty: string; total_questions: number }[]>`
+        SELECT
+          q.difficulty::text as difficulty,
+          COUNT(*)::int as total_questions
+        FROM questions q
+        WHERE q.difficulty IS NOT NULL
+        GROUP BY q.difficulty
+      `,
+
+      this.prisma.$queryRaw<{ difficulty: string; rank: number }[]>`
+        SELECT difficulty, rank
+        FROM (
+          SELECT
+            ua.user_id,
+            q.difficulty::text as difficulty,
+            RANK() OVER (
+              PARTITION BY q.difficulty
+              ORDER BY
+                ROUND(
+                  100.0 * COUNT(CASE WHEN ua.is_correct = true THEN 1 END)
+                  / NULLIF(COUNT(*), 0),
+                  2
+                ) DESC
+            )::int as rank
+          FROM user_answers ua
+          JOIN questions q ON ua.question_id = q.id
+          WHERE ua.is_correct IS NOT NULL AND q.difficulty IS NOT NULL
+          GROUP BY ua.user_id, q.difficulty
+        ) ranked
+        WHERE user_id = ${user_id}
+      `,
     ]);
 
     // Extract Test Stats
@@ -122,6 +176,10 @@ export class StatisticService {
 
     const topicRankMap = new Map<string, number>(
       topicRankRaw.map((r) => [r.topic, r.rank]),
+    );
+
+    const difficultyRankMap = new Map<string, number>(
+      difficultyRankRaw.map((r) => [r.difficulty, r.rank]),
     );
 
     const unusedQuestions = Math.max(0, totalQuestions - usedQuestions);
@@ -161,6 +219,36 @@ export class StatisticService {
       };
     });
 
+    const difficultyStatsMap = new Map<string, (typeof difficultyStats)[number]>(
+      difficultyStats.map((s) => [s.difficulty, s]),
+    );
+
+    const performanceByDifficulty = totalQuestionsByDifficultyRaw.map((difficultyData) => {
+      const stats = difficultyStatsMap.get(difficultyData.difficulty) || {
+        attempted: 0,
+        correct: 0,
+        used_questions: 0,
+      };
+
+      const percentage = stats.attempted
+        ? +(100 * (stats.correct / stats.attempted)).toFixed(2)
+        : 0;
+
+      const totalQuestionsInDifficulty = difficultyData.total_questions;
+
+      const progressPercentage = totalQuestionsInDifficulty
+        ? +(100 * (stats.used_questions / totalQuestionsInDifficulty)).toFixed(2)
+        : 0;
+
+      return {
+        difficulty: difficultyData.difficulty,
+        correct_percentage: percentage,
+        total_correct: stats.correct,
+        rank: difficultyRankMap.get(difficultyData.difficulty) ?? null,
+        question_bank_progress: progressPercentage,
+      };
+    });
+
     return {
       success: true,
       message: 'Statistics calculated successfully',
@@ -191,6 +279,9 @@ export class StatisticService {
 
         // topic-wise performance
         performance_by_topic: performanceByTopic,
+
+        // difficulty-wise performance
+        performance_by_difficulty: performanceByDifficulty,
       },
     };
   }
