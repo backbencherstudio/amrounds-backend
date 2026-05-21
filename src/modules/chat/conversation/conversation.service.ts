@@ -13,9 +13,9 @@ export class ConversationService {
   constructor(
     private prisma: PrismaService,
     private readonly messageGateway: MessageGateway,
-  ) {}
+  ) { }
 
-  async create(user_id: string, createConversationDto: CreateConversationDto) {
+  async createConversation(user_id: string, createConversationDto: CreateConversationDto) {
     try {
       const data: any = {};
 
@@ -61,8 +61,16 @@ export class ConversationService {
           },
         },
         where: {
-          creator_id: data.creator_id,
-          participant_id: data.participant_id,
+          OR: [
+            {
+              creator_id: data.creator_id,
+              participant_id: data.participant_id,
+            },
+            {
+              creator_id: data.participant_id,
+              participant_id: data.creator_id,
+            },
+          ],
         },
       });
 
@@ -86,7 +94,7 @@ export class ConversationService {
       if (conversation) {
         await addAvatarUrl(conversation);
         return {
-          success: false,
+          success: true,
           message: 'Conversation already exists',
           data: conversation,
         };
@@ -232,8 +240,8 @@ export class ConversationService {
         if (conversation.participant && conversation.participant.avatar) {
           conversation.participant['avatar_url'] = await SojebStorage.url(
             appConfig().storageUrl.avatar +
-              '/' +
-              conversation.participant.avatar,
+            '/' +
+            conversation.participant.avatar,
           );
         }
       }
