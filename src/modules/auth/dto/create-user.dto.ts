@@ -49,6 +49,10 @@ export class CreateUserDto {
 
   @IsOptional()
   @ApiProperty()
+  specialty?: string;
+
+  @IsOptional()
+  @ApiProperty()
   bio: string;
 
   @IsOptional()

@@ -30,7 +30,7 @@ export class ProfileService {
     private readonly prisma: PrismaService,
     private notificationRepository: NotificationRepository,
     private messageGateway: MessageGateway,
-  ) {}
+  ) { }
 
   async getProfileStats(user_id: string) {
     const [totalTest, totalCompletedTest, totalScore] =
@@ -113,7 +113,7 @@ export class ProfileService {
       await this.prisma.$executeRawUnsafe(
         `CREATE EXTENSION IF NOT EXISTS pg_trgm;`,
       );
-    } catch (e) {}
+    } catch (e) { }
 
     const searchTerm = search || '';
 
@@ -137,14 +137,13 @@ export class ProfileService {
           (
             SELECT COUNT(*) FROM skills s 
             WHERE s.user_id = u.id 
-            AND ${
-              skillNames.length > 0
-                ? Prisma.sql`EXISTS (
+            AND ${skillNames.length > 0
+          ? Prisma.sql`EXISTS (
                     SELECT 1 FROM unnest(string_to_array(${joinForSql(skillNames)}, ${delimiter})) as k 
                     WHERE similarity(LOWER(s.name), k) > 0.4
                   )`
-                : Prisma.sql`FALSE`
-            }
+          : Prisma.sql`FALSE`
+        }
           ) * 3 +
           
           -- Overlap in Education (Fuzzy Match)
@@ -152,23 +151,21 @@ export class ProfileService {
             SELECT COUNT(*) FROM educations e 
             WHERE e.user_id = u.id 
             AND (
-              ${
-                institutes.length > 0
-                  ? Prisma.sql`EXISTS (
+              ${institutes.length > 0
+          ? Prisma.sql`EXISTS (
                       SELECT 1 FROM unnest(string_to_array(${joinForSql(institutes)}, ${delimiter})) as k 
                       WHERE similarity(LOWER(e.institute), k) > 0.4
                     )`
-                  : Prisma.sql`FALSE`
-              }
+          : Prisma.sql`FALSE`
+        }
               OR 
-              ${
-                degrees.length > 0
-                  ? Prisma.sql`EXISTS (
+              ${degrees.length > 0
+          ? Prisma.sql`EXISTS (
                       SELECT 1 FROM unnest(string_to_array(${joinForSql(degrees)}, ${delimiter})) as k 
                       WHERE similarity(LOWER(e.degree), k) > 0.4
                     )`
-                  : Prisma.sql`FALSE`
-              }
+          : Prisma.sql`FALSE`
+        }
             )
           ) * 2 +
           
@@ -177,23 +174,21 @@ export class ProfileService {
             SELECT COUNT(*) FROM experiences ex 
             WHERE ex.user_id = u.id 
             AND (
-              ${
-                companies.length > 0
-                  ? Prisma.sql`EXISTS (
+              ${companies.length > 0
+          ? Prisma.sql`EXISTS (
                       SELECT 1 FROM unnest(string_to_array(${joinForSql(companies)}, ${delimiter})) as k 
                       WHERE similarity(LOWER(ex.company), k) > 0.4
                     )`
-                  : Prisma.sql`FALSE`
-              }
+          : Prisma.sql`FALSE`
+        }
               OR 
-              ${
-                positions.length > 0
-                  ? Prisma.sql`EXISTS (
+              ${positions.length > 0
+          ? Prisma.sql`EXISTS (
                       SELECT 1 FROM unnest(string_to_array(${joinForSql(positions)}, ${delimiter})) as k 
                       WHERE similarity(LOWER(ex.position), k) > 0.4
                     )`
-                  : Prisma.sql`FALSE`
-              }
+          : Prisma.sql`FALSE`
+        }
             )
           ) * 2 +
 
@@ -201,22 +196,20 @@ export class ProfileService {
           (
             SELECT COUNT(*) FROM publications p 
             WHERE p.user_id = u.id 
-            AND ${
-              topics.length > 0
-                ? Prisma.sql`EXISTS (
+            AND ${topics.length > 0
+          ? Prisma.sql`EXISTS (
                     SELECT 1 FROM unnest(string_to_array(${joinForSql(topics)}, ${delimiter})) as k 
                     WHERE similarity(LOWER(p.topic), k) > 0.4
                   )`
-                : Prisma.sql`FALSE`
-            }
+          : Prisma.sql`FALSE`
+        }
           ) * 2
         ) as suggestion_rank,
 
         -- Calculate Search Rank (only if search term is provided, else 0)
-        ${
-          searchTerm
-            ? Prisma.sql`(similarity(u.name, ${searchTerm}) + similarity(u.username, ${searchTerm}) + similarity(u.bio, ${searchTerm}))`
-            : Prisma.sql`0`
+        ${searchTerm
+          ? Prisma.sql`(similarity(u.name, ${searchTerm}) + similarity(u.username, ${searchTerm}) + similarity(u.bio, ${searchTerm}))`
+          : Prisma.sql`0`
         } as search_rank
 
       FROM users u
@@ -225,15 +218,14 @@ export class ProfileService {
       AND u.status = 1
       AND u.type != 'admin'
       AND NOT (u.approved = false AND u.approved_at IS NULL)
-      ${
-        searchTerm
+      ${searchTerm
           ? Prisma.sql`AND (
             u.name ILIKE ${'%' + searchTerm + '%'} 
             OR u.username ILIKE ${'%' + searchTerm + '%'}
             OR u.bio ILIKE ${'%' + searchTerm + '%'}
           )`
           : Prisma.sql``
-      }
+        }
       ORDER BY 
         ${searchTerm ? Prisma.sql`search_rank DESC,` : Prisma.sql``}
         suggestion_rank DESC
@@ -250,15 +242,14 @@ export class ProfileService {
       AND u.status = 1
       AND u.type != 'admin'
       AND NOT (u.approved = false AND u.approved_at IS NULL)
-      ${
-        searchTerm
+      ${searchTerm
           ? Prisma.sql`AND (
             u.name ILIKE ${'%' + searchTerm + '%'} 
             OR u.username ILIKE ${'%' + searchTerm + '%'}
             OR u.bio ILIKE ${'%' + searchTerm + '%'}
           )`
           : Prisma.sql``
-      }
+        }
     `,
       this.prisma.follow.findMany({
         where: {
@@ -280,8 +271,8 @@ export class ProfileService {
             ...user,
             avatar: user.avatar
               ? await SojebStorage.url(
-                  `${appConfig().storageUrl.avatar}/${user.avatar}`,
-                )
+                `${appConfig().storageUrl.avatar}/${user.avatar}`,
+              )
               : null,
             is_following: following.some((f) => f.following_id === user.id),
           };
@@ -357,8 +348,8 @@ export class ProfileService {
             ...userNode,
             avatar: userNode.avatar
               ? await SojebStorage.url(
-                  `${appConfig().storageUrl.avatar}/${userNode.avatar}`,
-                )
+                `${appConfig().storageUrl.avatar}/${userNode.avatar}`,
+              )
               : null,
           };
         }),
@@ -391,6 +382,7 @@ export class ProfileService {
           country: true,
           state: true,
           current_practice: true,
+          specialty: true,
           bio: true,
           instagram: true,
           linkedin: true,
@@ -505,9 +497,9 @@ export class ProfileService {
     const ranking = rankResult[0]?.rank ?? null;
     const best_topic = topicStats[0]
       ? {
-          name: topicStats[0].topic,
-          correct_percentage: topicStats[0].correct_percentage,
-        }
+        name: topicStats[0].topic,
+        correct_percentage: topicStats[0].correct_percentage,
+      }
       : null;
 
     if (user.type == 'admin') {
@@ -526,8 +518,8 @@ export class ProfileService {
           bio: rest.bio,
           avatar: rest.avatar
             ? await SojebStorage.url(
-                `${appConfig().storageUrl.avatar}/${rest.avatar}`,
-              )
+              `${appConfig().storageUrl.avatar}/${rest.avatar}`,
+            )
             : null,
         },
       };
@@ -540,8 +532,8 @@ export class ProfileService {
         ...rest,
         avatar: rest.avatar
           ? await SojebStorage.url(
-              `${appConfig().storageUrl.avatar}/${rest.avatar}`,
-            )
+            `${appConfig().storageUrl.avatar}/${rest.avatar}`,
+          )
           : null,
         cv: rest.cv
           ? await SojebStorage.url(`${appConfig().storageUrl.cv}/${rest.cv}`)
