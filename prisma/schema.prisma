@@ -74,6 +74,8 @@ model User {
   email_notification   Boolean? @default(true)
   website_notification Boolean? @default(true)
   is_public            Boolean? @default(true)
+  // New
+  specialty            String?
 
   phone_number  String?
   city          String?

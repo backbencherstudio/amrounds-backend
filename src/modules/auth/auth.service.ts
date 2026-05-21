@@ -53,6 +53,7 @@ export class AuthService {
           address: true,
           country: true,
           state: true,
+          specialty: true,
           phone_number: true,
           type: true,
           gender: true,
@@ -161,6 +162,9 @@ export class AuthService {
 
     if (updateUserDto.current_practice) {
       data.current_practice = updateUserDto.current_practice;
+    }
+    if (updateUserDto.specialty) {
+      data.specialty = updateUserDto.specialty;
     }
     if (updateUserDto.website_notification) {
       data.website_notification = updateUserDto.website_notification;
@@ -411,6 +415,7 @@ export class AuthService {
     country,
     state,
     current_practice,
+    specialty,
     bio,
     instagram,
     linkedin,
@@ -429,6 +434,7 @@ export class AuthService {
     country: string;
     state: string;
     current_practice?: string;
+    specialty?: string;
     bio?: string;
     instagram?: string;
     linkedin?: string;
@@ -480,6 +486,7 @@ export class AuthService {
         country: country,
         state: state,
         current_practice: current_practice,
+        specialty: specialty,
         bio: bio,
         instagram: instagram,
         linkedin: linkedin,

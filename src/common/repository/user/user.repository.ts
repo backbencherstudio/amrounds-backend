@@ -9,7 +9,7 @@ import { PrismaService } from '../../../prisma/prisma.service';
 
 @Injectable()
 export class UserRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
   /**
    * get user by email
    * @param email
@@ -191,6 +191,7 @@ export class UserRepository {
     country,
     state,
     current_practice,
+    specialty,
     bio,
     instagram,
     linkedin,
@@ -213,6 +214,7 @@ export class UserRepository {
     country?: string;
     state?: string;
     current_practice?: string;
+    specialty?: string;
     bio?: string;
     instagram?: string;
     linkedin?: string;
@@ -254,6 +256,9 @@ export class UserRepository {
       }
       if (current_practice) {
         data['current_practice'] = current_practice;
+      }
+      if (specialty) {
+        data['specialty'] = specialty;
       }
       if (bio) {
         data['bio'] = bio;
