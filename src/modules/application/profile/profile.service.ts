@@ -124,7 +124,7 @@ export class ProfileService {
         u.id, 
         u.name, 
         u.username, 
-        u.avatar, 
+        u.avatar,
         u.bio, 
         u.training_practice, 
         u.current_practice,
@@ -208,7 +208,7 @@ export class ProfileService {
 
         -- Calculate Search Rank (only if search term is provided, else 0)
         ${searchTerm
-          ? Prisma.sql`(similarity(u.name, ${searchTerm}) + similarity(u.username, ${searchTerm}) + similarity(u.bio, ${searchTerm}))`
+          ? Prisma.sql`(COALESCE(similarity(u.name, ${searchTerm}), 0) + COALESCE(similarity(u.username, ${searchTerm}), 0) + COALESCE(similarity(u.bio, ${searchTerm}), 0) + COALESCE(similarity(u.country, ${searchTerm}), 0))`
           : Prisma.sql`0`
         } as search_rank
 
@@ -223,6 +223,7 @@ export class ProfileService {
             u.name ILIKE ${'%' + searchTerm + '%'} 
             OR u.username ILIKE ${'%' + searchTerm + '%'}
             OR u.bio ILIKE ${'%' + searchTerm + '%'}
+            OR u.country ILIKE ${'%' + searchTerm + '%'}
           )`
           : Prisma.sql``
         }
@@ -247,6 +248,7 @@ export class ProfileService {
             u.name ILIKE ${'%' + searchTerm + '%'} 
             OR u.username ILIKE ${'%' + searchTerm + '%'}
             OR u.bio ILIKE ${'%' + searchTerm + '%'}
+            OR u.country ILIKE ${'%' + searchTerm + '%'}
           )`
           : Prisma.sql``
         }

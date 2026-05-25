@@ -1253,76 +1253,130 @@ export class TestService {
 
   async getQuestionCount(user_id: string) {
     try {
+      // 1. Fetch all active questions
       const allQuestionsInfo = await this.prisma.questions.findMany({
         where: { deleted_at: null },
         select: { id: true, difficulty: true, topic: true },
       });
       const totalQuestions = allQuestionsInfo.length;
 
-      const difficultyStats: Record<string, number> = {};
-      const topicStats: Record<string, number> = {};
+      // 2. Fetch all user answers
+      const userAnswers = await this.prisma.userAnswer.findMany({
+        where: { user_id },
+        select: {
+          question_id: true,
+          is_correct: true,
+          is_marked: true,
+        },
+      });
 
-      allQuestionsInfo.forEach((q) => {
-        if (q.difficulty) {
-          difficultyStats[q.difficulty] =
-            (difficultyStats[q.difficulty] || 0) + 1;
+      // 3. Build lookup sets/maps for user answers
+      const usedQuestionIds = new Set<string>();
+      const correctQuestionIds = new Set<string>();
+      const incorrectQuestionIds = new Set<string>();
+      const markedQuestionIds = new Set<string>();
+
+      userAnswers.forEach((ans) => {
+        usedQuestionIds.add(ans.question_id);
+        if (ans.is_correct === true) {
+          correctQuestionIds.add(ans.question_id);
         }
+        if (ans.is_correct === false) {
+          incorrectQuestionIds.add(ans.question_id);
+        }
+        if (ans.is_marked === true) {
+          markedQuestionIds.add(ans.question_id);
+        }
+      });
+
+      // Define difficulties and topics
+      const difficulties = ['Intern', 'Board', 'Senior'] as const;
+      const topics = [
+        'Anesthesia_Medicine',
+        'Cancer',
+        'Cleft_Craniofacial',
+        'Cosmetics',
+        'Dentoalveolar',
+        'Implants',
+        'Orthognathic',
+        'Pathology',
+        'Recontraction',
+        'TMJ',
+        'Trauma',
+      ] as const;
+
+      // Helper to initialize empty stats
+      const createEmptyStats = () => {
+        const stats: Record<string, Record<string, number>> = {};
+        difficulties.forEach((d) => {
+          stats[d] = {};
+          topics.forEach((t) => {
+            stats[d][t] = 0;
+          });
+        });
+        return stats;
+      };
+
+      const usedStats = createEmptyStats();
+      const unusedStats = createEmptyStats();
+      const correctStats = createEmptyStats();
+      const incorrectStats = createEmptyStats();
+      const markStats = createEmptyStats();
+
+      // 4. Categorize active questions
+      allQuestionsInfo.forEach((q) => {
+        const diff = q.difficulty;
+        if (!diff || !difficulties.includes(diff as any)) return;
+
+        const isUsed = usedQuestionIds.has(q.id);
+        const isCorrect = correctQuestionIds.has(q.id);
+        const isIncorrect = incorrectQuestionIds.has(q.id);
+        const isMarked = markedQuestionIds.has(q.id);
+
         if (q.topic && Array.isArray(q.topic)) {
           q.topic.forEach((t) => {
-            topicStats[t] = (topicStats[t] || 0) + 1;
+            if (!topics.includes(t as any)) return;
+
+            if (isUsed) {
+              usedStats[diff][t]++;
+            } else {
+              unusedStats[diff][t]++;
+            }
+
+            if (isCorrect) {
+              correctStats[diff][t]++;
+            }
+            if (isIncorrect) {
+              incorrectStats[diff][t]++;
+            }
+            if (isMarked) {
+              markStats[diff][t]++;
+            }
           });
         }
       });
 
-      const difficulty_wise_count = Object.entries(difficultyStats).map(
-        ([name, count]) => ({ name, count }),
-      );
-      const topic_wise_count = Object.entries(topicStats).map(
-        ([name, count]) => ({ name, count }),
-      );
-
-      const usedQuestions = await this.prisma.userAnswer.findMany({
-        where: { user_id },
-        distinct: ['question_id'],
-        select: { id: true },
-      });
-      const usedCount = usedQuestions.length;
-
-      const unusedCount = totalQuestions - usedCount;
-
-      const correctQuestions = await this.prisma.userAnswer.findMany({
-        where: { user_id, is_correct: true },
-        distinct: ['question_id'],
-        select: { id: true },
-      });
-      const correctCount = correctQuestions.length;
-
-      const incorrectQuestions = await this.prisma.userAnswer.findMany({
-        where: { user_id, is_correct: false },
-        distinct: ['question_id'],
-        select: { id: true },
-      });
-      const incorrectCount = incorrectQuestions.length;
-
-      const markedQuestions = await this.prisma.userAnswer.findMany({
-        where: { user_id, is_marked: true },
-        distinct: ['question_id'],
-        select: { id: true },
-      });
-      const markCount = markedQuestions.length;
+      // Helper to format stats to target structure
+      const formatStats = (stats: Record<string, Record<string, number>>) => {
+        return difficulties.map((d) => ({
+          difficulty: d,
+          topic_wise_count: topics.map((t) => ({
+            name: t,
+            count: stats[d][t],
+          })),
+        }));
+      };
 
       return {
         success: true,
         message: 'Question count retrieved successfully',
         data: {
           total_questions: totalQuestions,
-          used_questions: usedCount,
-          unused_questions: unusedCount,
-          correct_count: correctCount,
-          incorrect_count: incorrectCount,
-          mark_count: markCount,
-          difficulty_wise_count,
-          topic_wise_count,
+          used_questions: formatStats(usedStats),
+          unused_questions: formatStats(unusedStats),
+          correct_count: formatStats(correctStats),
+          incorrect_count: formatStats(incorrectStats),
+          mark_count: formatStats(markStats),
         },
       };
     } catch (error) {
