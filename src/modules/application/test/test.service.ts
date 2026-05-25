@@ -1307,11 +1307,11 @@ export class TestService {
 
       // Helper to initialize empty stats
       const createEmptyStats = () => {
-        const stats: Record<string, Record<string, number>> = {};
+        const stats: Record<string, Record<string, string[]>> = {};
         difficulties.forEach((d) => {
           stats[d] = {};
           topics.forEach((t) => {
-            stats[d][t] = 0;
+            stats[d][t] = [];
           });
         });
         return stats;
@@ -1338,31 +1338,32 @@ export class TestService {
             if (!topics.includes(t as any)) return;
 
             if (isUsed) {
-              usedStats[diff][t]++;
+              usedStats[diff][t].push(q.id);
             } else {
-              unusedStats[diff][t]++;
+              unusedStats[diff][t].push(q.id);
             }
 
             if (isCorrect) {
-              correctStats[diff][t]++;
+              correctStats[diff][t].push(q.id);
             }
             if (isIncorrect) {
-              incorrectStats[diff][t]++;
+              incorrectStats[diff][t].push(q.id);
             }
             if (isMarked) {
-              markStats[diff][t]++;
+              markStats[diff][t].push(q.id);
             }
           });
         }
       });
 
       // Helper to format stats to target structure
-      const formatStats = (stats: Record<string, Record<string, number>>) => {
+      const formatStats = (stats: Record<string, Record<string, string[]>>) => {
         return difficulties.map((d) => ({
           difficulty: d,
           topic_wise_count: topics.map((t) => ({
             name: t,
-            count: stats[d][t],
+            count: stats[d][t].length,
+            ids: stats[d][t],
           })),
         }));
       };
