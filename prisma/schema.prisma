@@ -707,8 +707,8 @@ model UserAnswer {
   id         String   @id @default(cuid())
   created_at DateTime @default(now())
 
-  test_id String
-  test    Test   @relation(fields: [test_id], references: [id], onDelete: Cascade)
+  test_id String?
+  test    Test?   @relation(fields: [test_id], references: [id], onDelete: Cascade)
 
   user_id String
   user    User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
