@@ -172,6 +172,23 @@ export class TestService {
         throw new Error('Test not found');
       }
 
+      // Fetch all user answers where the question belongs to this test and is marked by the user across any test
+      const questionIds = test.questions.map((q: any) => q.id);
+      const markedAnswers = await this.prisma.userAnswer.findMany({
+        where: {
+          user_id: user_id,
+          question_id: { in: questionIds },
+          is_marked: true,
+        },
+        select: {
+          question_id: true,
+        },
+      });
+
+      const markedQuestionIds = new Set(
+        markedAnswers.map((ua) => ua.question_id),
+      );
+
       test.questions = (await Promise.all(
         test.questions.map(async (question: any) => {
           if (question && question.explanation) {
@@ -253,10 +270,18 @@ export class TestService {
             }
           }
 
+          const userAnswer = test.user_answers.find(
+            (ua) => ua.question_id === question.id,
+          );
+
           return {
             ...question,
             explanation_image_url,
             steam_image_url,
+            is_marked: markedQuestionIds.has(question.id),
+            selected_option_id: userAnswer ? userAnswer.selected_option_id : null,
+            // is_omitted: userAnswer ? userAnswer.is_omitted : false,
+            // is_correct: userAnswer ? userAnswer.is_correct : null,
           };
         }),
       )) as any;
