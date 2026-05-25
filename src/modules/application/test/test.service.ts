@@ -554,7 +554,6 @@ export class TestService {
 
       const existingAnswer = await this.prisma.userAnswer.findFirst({
         where: {
-          test_id: test_id,
           question_id: question_id,
         },
       });
@@ -576,7 +575,6 @@ export class TestService {
       const userAnswer = await this.prisma.userAnswer.create({
         data: {
           user_id,
-          test_id,
           question_id,
           is_marked,
         },
