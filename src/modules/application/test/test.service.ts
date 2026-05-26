@@ -1084,6 +1084,7 @@ export class TestService {
 
     const whereCondition: any = {
       user_id,
+      is_completed: true
     };
 
     if (search) {
