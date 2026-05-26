@@ -30,7 +30,7 @@ import { PaginationDto, TestHistoryDto } from './dto/query-test.dto';
 @Roles(Role.USER)
 @Controller('test')
 export class TestController {
-  constructor(private readonly testService: TestService) {}
+  constructor(private readonly testService: TestService) { }
 
   @Post()
   createOneTest(@Req() req: Request, @Body() createTestDto: CreateTestDto) {
