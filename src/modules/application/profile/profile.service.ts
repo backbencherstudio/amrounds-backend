@@ -539,22 +539,38 @@ export class ProfileService {
         WHERE user_id = ${user_id}
       `,
 
-      // Ranking: all-time rank based on avg_score desc, total_tests desc
+      // Ranking: all-time rank based on accuracy desc, total_tests desc
       this.prisma.$queryRaw<{ rank: number }[]>`
-        WITH base_stats AS (
+        WITH user_accuracies AS (
+          SELECT 
+             ua.user_id,
+             CASE WHEN COUNT(*) = 0 THEN 0
+             ELSE ROUND((COUNT(CASE WHEN ua.is_correct = true THEN 1 END)::numeric / COUNT(*)) * 100)
+             END::int as accuracy
+          FROM user_answers ua
+          GROUP BY ua.user_id
+        ),
+        base_stats AS (
           SELECT
             t.user_id,
-            COUNT(*)::int as total_tests,
-            AVG(t.score)::float as avg_score
+            COUNT(*)::int as total_tests
           FROM tests t
           WHERE t.is_completed = true
           GROUP BY t.user_id
         ),
+        combined_stats AS (
+          SELECT
+            b.user_id,
+            b.total_tests,
+            COALESCE(a.accuracy, 0) as accuracy
+          FROM base_stats b
+          LEFT JOIN user_accuracies a ON b.user_id = a.user_id
+        ),
         ranked_users AS (
           SELECT
             user_id,
-            RANK() OVER (ORDER BY avg_score DESC, total_tests DESC)::int as rank
-          FROM base_stats
+            RANK() OVER (ORDER BY accuracy DESC, total_tests DESC)::int as rank
+          FROM combined_stats
         )
         SELECT rank FROM ranked_users
         WHERE user_id = ${user_id}
