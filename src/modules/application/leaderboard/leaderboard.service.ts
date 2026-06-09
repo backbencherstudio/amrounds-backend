@@ -93,7 +93,7 @@ export class LeaderboardService {
                ROUND((completed_questions_count / total_questions_count) * 100)::int
             ELSE 0
           END as completion_percentage,
-          RANK() OVER (ORDER BY avg_score DESC, total_tests DESC)::int as rank
+          RANK() OVER (ORDER BY accuracy DESC, total_tests DESC)::int as rank
         FROM combined_stats
         WHERE 1=1 ${havingClause}
       )
@@ -118,7 +118,7 @@ export class LeaderboardService {
           u.city,
           u.country,
           u.state,
-          RANK() OVER (ORDER BY r.avg_score DESC, r.total_tests DESC)::int as rank
+          RANK() OVER (ORDER BY r.accuracy DESC, r.total_tests DESC)::int as rank
         FROM ranked_users r
         JOIN users u ON r.user_id = u.id
         WHERE u.is_public = true OR u.id = $4
