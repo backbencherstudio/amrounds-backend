@@ -225,15 +225,12 @@ export class TestService {
                 '\\$&',
               );
               const regex = new RegExp(
-                `(src=['"])([^'"]*${escapedFileName})(['"])`,
+                `(src=['"])([^'"]*${escapedFileName}[^'"]*)(['"])`,
                 'g',
               );
               question.explanation = question.explanation.replace(
                 regex,
                 (match, p1, p2, p3) => {
-                  if (p2.startsWith('http')) {
-                    return match;
-                  }
                   return `${p1}${explanation_image_url}${p3}`;
                 },
               );
@@ -255,15 +252,12 @@ export class TestService {
                 '\\$&',
               );
               const regex = new RegExp(
-                `(src=['"])([^'"]*${escapedFileName})(['"])`,
+                `(src=['"])([^'"]*${escapedFileName}[^'"]*)(['"])`,
                 'g',
               );
               question.question_steam = question.question_steam.replace(
                 regex,
                 (match, p1, p2, p3) => {
-                  if (p2.startsWith('http')) {
-                    return match;
-                  }
                   return `${p1}${steam_image_url}${p3}`;
                 },
               );
@@ -464,15 +458,12 @@ export class TestService {
             '\\$&',
           );
           const regex = new RegExp(
-            `(src=['"])([^'"]*${escapedFileName})(['"])`,
+            `(src=['"])([^'"]*${escapedFileName}[^'"]*)(['"])`,
             'g',
           );
           question.question_steam = question.question_steam.replace(
             regex,
             (match, p1, p2, p3) => {
-              if (p2.startsWith('http')) {
-                return match;
-              }
               return `${p1}${steam_image_url}${p3}`;
             },
           );
@@ -494,15 +485,12 @@ export class TestService {
             '\\$&',
           );
           const regex = new RegExp(
-            `(src=['"])([^'"]*${escapedFileName})(['"])`,
+            `(src=['"])([^'"]*${escapedFileName}[^'"]*)(['"])`,
             'g',
           );
           question.explanation = question.explanation.replace(
             regex,
             (match, p1, p2, p3) => {
-              if (p2.startsWith('http')) {
-                return match;
-              }
               return `${p1}${explanation_image_url}${p3}`;
             },
           );
@@ -736,15 +724,12 @@ export class TestService {
                 '\\$&',
               );
               const regex = new RegExp(
-                `(src=['"])([^'"]*${escapedFileName})(['"])`,
+                `(src=['"])([^'"]*${escapedFileName}[^'"]*)(['"])`,
                 'g',
               );
               question.question_steam = question.question_steam.replace(
                 regex,
                 (match, p1, p2, p3) => {
-                  if (p2.startsWith('http')) {
-                    return match;
-                  }
                   return `${p1}${steam_image_url}${p3}`;
                 },
               );
@@ -1545,15 +1530,12 @@ export class TestService {
                 '\\$&',
               );
               const regex = new RegExp(
-                `(src=['"])([^'"]*${escapedFileName})(['"])`,
+                `(src=['"])([^'"]*${escapedFileName}[^'"]*)(['"])`,
                 'g',
               );
               processedExplanation = processedExplanation.replace(
                 regex,
                 (match, p1, p2, p3) => {
-                  if (p2.startsWith('http')) {
-                    return match;
-                  }
                   return `${p1}${explanation_image_url}${p3}`;
                 },
               );
@@ -1575,15 +1557,12 @@ export class TestService {
                 '\\$&',
               );
               const regex = new RegExp(
-                `(src=['"])([^'"]*${escapedFileName})(['"])`,
+                `(src=['"])([^'"]*${escapedFileName}[^'"]*)(['"])`,
                 'g',
               );
               processedQuestionSteam = processedQuestionSteam.replace(
                 regex,
                 (match, p1, p2, p3) => {
-                  if (p2.startsWith('http')) {
-                    return match;
-                  }
                   return `${p1}${steam_image_url}${p3}`;
                 },
               );
