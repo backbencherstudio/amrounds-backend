@@ -11,15 +11,17 @@ import { UserRepository } from '../../../common/repository/user/user.repository'
 import { Role } from '../../../common/guard/role/role.enum';
 import { MessageStatus } from 'prisma/generated/enums';
 import { CreateAdminMessageDto } from './dto/create-admin-message.dto';
+import { NotificationRepository } from 'src/common/repository/notification/notification.repository';
 
 @Injectable()
 export class MessageService {
   constructor(
     private prisma: PrismaService,
     private readonly messageGateway: MessageGateway,
+    private notificationRepository: NotificationRepository,
     private userRepository: UserRepository,
     private chatRepository: ChatRepository,
-  ) {}
+  ) { }
 
   async create(
     user_id: string,
@@ -110,6 +112,25 @@ export class MessageService {
           updated_at: DateHelper.now(),
         },
       });
+
+      const sender = await this.prisma.user.findFirst({
+        where: {
+          id: user_id,
+        },
+      });
+
+      const messageNotificationPayload: any = {
+        sender_id: user_id,
+        receiver_id: data.receiver_id,
+        message: `You have a new message from ${sender?.name}`,
+        last_message: createMessageDto.message,
+        type: 'message',
+      };
+
+      await this.notificationRepository.createNotification(
+        messageNotificationPayload,
+      );
+
 
       // this.messageGateway.server
       //   .to(this.messageGateway.clients.get(data.receiver_id))
@@ -223,8 +244,26 @@ export class MessageService {
         },
       });
 
-      // Broadcast to all admins if receiver_id wasn't provided!
-      if (!data.receiver_id) {
+      const sender = await this.prisma.user.findFirst({
+        where: {
+          id: user_id,
+        },
+      });
+
+      if (data.receiver_id) {
+        const messageNotificationPayload: any = {
+          sender_id: user_id,
+          receiver_id: data.receiver_id,
+          message: `You have a new message from ${sender?.name}`,
+          last_message: data.message,
+          type: 'message',
+        };
+
+        await this.notificationRepository.createNotification(
+          messageNotificationPayload,
+        );
+      } else {
+        // Broadcast to all admins if receiver_id wasn't provided!
         const messageData = {
           message: {
             id: message.id,
@@ -250,6 +289,18 @@ export class MessageService {
               data: messageData,
             });
           }
+
+          const messageNotificationPayload: any = {
+            sender_id: user_id,
+            receiver_id: admin.id,
+            message: `You have a new message from ${sender.first_name} ${sender.last_name}`,
+            last_message: data.message,
+            type: 'message',
+          };
+
+          await this.notificationRepository.createNotification(
+            messageNotificationPayload,
+          );
         }
       }
 

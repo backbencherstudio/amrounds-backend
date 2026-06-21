@@ -12,16 +12,11 @@ export class NotificationRepository {
    * @param entity_id - The ID of the entity related to the notification
    * @returns The created notification
    */
-  async createNotification({
-    sender_id,
-    receiver_id,
-    text,
-    type,
-    entity_id,
-  }: {
+  async createNotification(payload: {
     sender_id?: string;
     receiver_id?: string;
     text?: string;
+    message?: string;
     type?:
       | 'message'
       | 'comment'
@@ -29,9 +24,15 @@ export class NotificationRepository {
       | 'booking'
       | 'payment_transaction'
       | 'package'
-      | 'blog';
+      | 'blog'
+      | 'approved'
+      | 'rejected'
+      | 'user_registered'
+      | 'follow';
     entity_id?: string;
   }) {
+    const { sender_id, receiver_id, type, entity_id } = payload;
+    const text = payload.text || payload.message;
     const notificationEventData = {};
     if (type) {
       notificationEventData['type'] = type;

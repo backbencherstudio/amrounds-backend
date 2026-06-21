@@ -8,6 +8,7 @@ import { NotificationModule } from './notification/notification.module';
 import { HelpModule } from './help/help.module';
 import { QuestionsModule } from './questions/questions.module';
 import { OverviewModule } from './overview/overview.module';
+import { SubscriptionPlanModule } from './subscription-plan/subscription-plan.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { OverviewModule } from './overview/overview.module';
     HelpModule,
     QuestionsModule,
     OverviewModule,
+    SubscriptionPlanModule,
   ],
 })
 export class AdminModule {}
