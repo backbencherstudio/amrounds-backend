@@ -118,6 +118,7 @@ model User {
   publications         Publication[]
   userAnswers          UserAnswer[]
   tests                Test[]
+  subscription         Subscription?
 
   @@map("users")
 }
@@ -730,4 +731,52 @@ model UserAnswer {
   is_correct Boolean?
 
   @@map("user_answers")
+}
+
+enum PlanType {
+  MONTHLY
+  PAY_AS_YOU_GO
+}
+
+model Plan {
+  id         String    @id @default(cuid())
+  created_at DateTime  @default(now())
+  updated_at DateTime  @default(now())
+  deleted_at DateTime?
+
+  name           String?
+  type           PlanType @default(MONTHLY)
+  price          Decimal
+  billing_period String?  @default("monthly")
+  credits        Int?     @default(0)
+  benefits       String[]
+
+  stripe_product_id String?
+  stripe_price_id   String?
+
+  subscriptions Subscription[]
+
+  @@map("plans")
+}
+
+model Subscription {
+  id         String    @id @default(cuid())
+  created_at DateTime  @default(now())
+  updated_at DateTime  @default(now())
+  deleted_at DateTime?
+
+  stripe_subscription_id String?
+  remaining_credits      Int?
+
+  plan_type PlanType @default(MONTHLY)
+
+  user_id String @unique
+  user    User   @relation(fields: [user_id], references: [id])
+  plan_id String
+  plan    Plan   @relation(fields: [plan_id], references: [id])
+
+  status             String    @default("active")
+  current_period_end DateTime? // Subscription end date
+
+  @@map("subscriptions")
 }

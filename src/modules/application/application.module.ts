@@ -9,8 +9,9 @@ import { SkillsModule } from './skills/skills.module';
 import { ProfileModule } from './profile/profile.module';
 import { StatisticModule } from './statistic/statistic.module';
 import { UserNotificationModule } from './user-notification/user-notification.module';
+import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 
 @Module({
-  imports: [NotificationModule, ContactModule, FaqModule, TestModule, LeaderboardModule, SupportModule, SkillsModule, ProfileModule, StatisticModule, UserNotificationModule],
+  imports: [NotificationModule, ContactModule, FaqModule, TestModule, LeaderboardModule, SupportModule, SkillsModule, ProfileModule, StatisticModule, UserNotificationModule, SubscriptionsModule],
 })
 export class ApplicationModule {}

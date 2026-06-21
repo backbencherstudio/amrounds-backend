@@ -20,7 +20,14 @@ async function bootstrap() {
   // Handle raw body for webhooks
   // app.use('/payment/stripe/webhook', express.raw({ type: 'application/json' }));
 
-  app.use(express.json({ limit: '50mb' }));
+  app.use(
+    express.json({
+      limit: '50mb',
+      verify: (req: any, res, buf) => {
+        req.rawBody = buf;
+      },
+    }),
+  );
   app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
   app.setGlobalPrefix('api');

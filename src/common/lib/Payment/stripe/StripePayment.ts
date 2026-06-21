@@ -135,7 +135,7 @@ export class StripePayment {
   }: {
     amount: number;
     currency: string;
-    customer_id: string;
+    customer_id?: string;
     metadata?: stripe.MetadataParam;
   }): Promise<stripe.PaymentIntent> {
     return Stripe.paymentIntents.create({
@@ -153,9 +153,8 @@ export class StripePayment {
    * @returns
    */
   static async createCheckoutSession() {
-    const success_url = `${
-      appConfig().app.url
-    }/success?session_id={CHECKOUT_SESSION_ID}`;
+    const success_url = `${appConfig().app.url
+      }/success?session_id={CHECKOUT_SESSION_ID}`;
     const cancel_url = `${appConfig().app.url}/failed`;
 
     const session = await Stripe.checkout.sessions.create({
@@ -190,11 +189,11 @@ export class StripePayment {
   static async createCheckoutSessionSubscription(
     customer: string,
     price: string,
+    metadata?: any,
   ) {
-    const success_url = `${
-      appConfig().app.url
-    }/success?session_id={CHECKOUT_SESSION_ID}`;
-    const cancel_url = `${appConfig().app.url}/failed`;
+    const success_url = `${appConfig().app.client_app_url || appConfig().app.url
+      }/payment-success?session_id={CHECKOUT_SESSION_ID}`;
+    const cancel_url = `${appConfig().app.client_app_url || appConfig().app.url}/payment-failed`;
 
     const session = await Stripe.checkout.sessions.create({
       mode: 'subscription',
@@ -207,11 +206,44 @@ export class StripePayment {
         },
       ],
       subscription_data: {
-        trial_period_days: 14,
+        metadata: metadata,
       },
+      metadata: metadata,
       success_url: success_url,
       cancel_url: cancel_url,
       // automatic_tax: { enabled: true },
+    });
+    return session;
+  }
+
+  /**
+   * Create stripe hosted checkout session for payment
+   * @param customer
+   * @param price
+   * @returns
+   */
+  static async createCheckoutSessionPayment(
+    customer: string,
+    price: string,
+    metadata?: any,
+  ) {
+    const success_url = `${appConfig().app.client_app_url || appConfig().app.url
+      }/payment-success?session_id={CHECKOUT_SESSION_ID}`;
+    const cancel_url = `${appConfig().app.client_app_url || appConfig().app.url}/payment-failed`;
+
+    const session = await Stripe.checkout.sessions.create({
+      mode: 'payment',
+      payment_method_types: ['card'],
+      customer: customer,
+      line_items: [
+        {
+          price: price,
+          quantity: 1,
+        },
+      ],
+      metadata: metadata,
+      success_url: success_url,
+      cancel_url: cancel_url,
     });
     return session;
   }
@@ -454,6 +486,10 @@ export class StripePayment {
   }
   // end ACH
 
+  static get stripe(): stripe {
+    return Stripe;
+  }
+
   static handleWebhook(rawBody: string, sig: string | string[]): stripe.Event {
     const event = Stripe.webhooks.constructEvent(
       rawBody,
@@ -462,4 +498,56 @@ export class StripePayment {
     );
     return event;
   }
+
+  // -----------------------subscription product & price start--------------------------------
+  static async createProduct(name: string, description?: string) {
+    return await Stripe.products.create({
+      name,
+      description,
+    });
+  }
+
+  static async updateProduct(
+    productId: string,
+    name?: string,
+    description?: string,
+  ) {
+    const updateData: stripe.ProductUpdateParams = {};
+    if (name) updateData.name = name;
+    if (description !== undefined) updateData.description = description;
+
+    return await Stripe.products.update(productId, updateData);
+  }
+
+  static async createPrice(
+    productId: string,
+    amount: number, // in dollars
+    currency: string = 'usd',
+    interval?: stripe.PriceCreateParams.Recurring.Interval,
+    interval_count?: number,
+  ) {
+    const priceData: stripe.PriceCreateParams = {
+      product: productId,
+      unit_amount: Math.round(amount * 100), // convert to cents
+      currency: currency,
+    };
+
+    if (interval) {
+      priceData.recurring = {
+        interval: interval,
+        ...(interval_count ? { interval_count } : {}),
+      };
+    }
+
+    return await Stripe.prices.create(priceData);
+  }
+
+  static async deactivatePrice(priceId: string) {
+    return await Stripe.prices.update(priceId, { active: false });
+  }
+
+  static async deactivateProduct(productId: string) {
+    return await Stripe.products.update(productId, { active: false });
+  }
+  // -----------------------subscription product & price end--------------------------------
 }
