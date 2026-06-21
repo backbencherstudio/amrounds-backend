@@ -15,6 +15,31 @@ export class TestService {
 
   async createOneTest(user_id: string, createTestDto: CreateTestDto) {
     try {
+      // Check free limit of 100 questions
+      const testAggregate = await this.prisma.test.aggregate({
+        where: { user_id },
+        _sum: {
+          total_questions: true,
+        },
+      });
+      const totalQuestionsTaken = testAggregate._sum.total_questions || 0;
+
+      const subscription = await this.prisma.subscription.findUnique({
+        where: { user_id },
+      });
+
+      const hasActiveSub = subscription && subscription.status === 'active';
+
+      if (!hasActiveSub) {
+        const totalQuestionsRequested = createTestDto.total_questions || 0;
+        if (totalQuestionsTaken + totalQuestionsRequested > 100) {
+          return {
+            success: false,
+            message: `You have reached or will exceed the free limit of 100 questions. You have taken ${totalQuestionsTaken} questions and requested ${totalQuestionsRequested} more. Please subscribe to continue.`,
+          };
+        }
+      }
+
       const { total_questions, test_mode, difficulty, topic } = createTestDto;
 
       let orConditions: any[] = [];
@@ -80,37 +105,72 @@ export class TestService {
         .slice(0, total_questions)
         .map((q) => q.id);
 
-      // Create the Test
-      const test = await this.prisma.test.create({
-        data: {
-          user_id,
-          test_mode: test_mode as any, // Cast to any to bypass Prisma type issue before generation
-          difficulty,
-          topic,
-          total_questions: selectedQuestionIds.length,
-          is_completed: false,
-          questions: {
-            connect: selectedQuestionIds.map((id) => ({ id })),
+      const isPayAsYouGo = subscription && subscription.status === 'active' && subscription.plan_type === 'PAY_AS_YOU_GO';
+      if (isPayAsYouGo) {
+        const remaining = subscription.remaining_credits ?? 0;
+        if (remaining <= 0) {
+          return {
+            success: false,
+            message: 'You have run out of credits. Please purchase more credits to continue.',
+          };
+        }
+        if (remaining < selectedQuestionIds.length) {
+          return {
+            success: false,
+            message: `You do not have enough credits to generate this test. Remaining credits: ${remaining}, required: ${selectedQuestionIds.length}.`,
+          };
+        }
+      }
+
+      // Create the Test and update credits in transaction
+      const test = await this.prisma.$transaction(async (tx) => {
+        const createdTest = await tx.test.create({
+          data: {
+            user_id,
+            test_mode: test_mode as any, // Cast to any to bypass Prisma type issue before generation
+            difficulty,
+            topic,
+            total_questions: selectedQuestionIds.length,
+            is_completed: false,
+            questions: {
+              connect: selectedQuestionIds.map((id) => ({ id })),
+            },
           },
-        },
-        select: {
-          id: true,
-          test_mode: true,
-          total_questions: true,
-          questions: {
-            select: {
-              id: true,
-              question_steam: true,
-              question_title: true,
-              answerOptions: {
-                select: {
-                  id: true,
-                  option_text: true,
+          select: {
+            id: true,
+            test_mode: true,
+            total_questions: true,
+            questions: {
+              select: {
+                id: true,
+                question_steam: true,
+                question_title: true,
+                answerOptions: {
+                  select: {
+                    id: true,
+                    option_text: true,
+                  },
                 },
               },
             },
           },
-        },
+        });
+
+        if (isPayAsYouGo) {
+          const remaining = subscription.remaining_credits ?? 0;
+          const newRemaining = Math.max(0, remaining - selectedQuestionIds.length);
+          const newStatus = newRemaining === 0 ? 'expired' : 'active';
+
+          await tx.subscription.update({
+            where: { id: subscription.id },
+            data: {
+              remaining_credits: newRemaining,
+              status: newStatus,
+            },
+          });
+        }
+
+        return createdTest;
       });
 
       return {

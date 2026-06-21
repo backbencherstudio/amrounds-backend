@@ -5,6 +5,7 @@ import { MiddlewareConsumer, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { BullModule } from '@nestjs/bullmq';
 import { RedisModule } from '@nestjs-modules/ioredis';
+import { ScheduleModule } from '@nestjs/schedule';
 
 // internal imports
 import appConfig from './config/app.config';
@@ -25,6 +26,7 @@ import { RepositoryModule } from './common/repository/repository.module';
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     ConfigModule.forRoot({
       isGlobal: true,
       load: [appConfig],

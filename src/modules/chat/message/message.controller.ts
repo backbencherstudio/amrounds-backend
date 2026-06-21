@@ -26,7 +26,7 @@ export class MessageController {
   constructor(
     private readonly messageService: MessageService,
     private readonly messageGateway: MessageGateway,
-  ) {}
+  ) { }
 
   @ApiOperation({ summary: 'Send message' })
   @Post()
