@@ -179,13 +179,13 @@ export class StripeController {
           const invoice = event.data.object as any;
           if (invoice.subscription) {
             const stripeSubscriptionId = invoice.subscription as string;
-            
+
             const stripeSub = (await StripePayment.stripe.subscriptions.retrieve(
               stripeSubscriptionId,
             )) as any;
             const periodEndUnix = stripeSub.items?.data?.[0]?.current_period_end;
             const currentPeriodEnd = periodEndUnix ? new Date(periodEndUnix * 1000) : null;
-            
+
             const dbSub = await this.prisma.subscription.findFirst({
               where: { stripe_subscription_id: stripeSubscriptionId },
             });
@@ -222,7 +222,7 @@ export class StripeController {
           const stripeSubscriptionId = stripeSub.id;
           const periodEndUnix = stripeSub.items?.data?.[0]?.current_period_end;
           const currentPeriodEnd = periodEndUnix ? new Date(periodEndUnix * 1000) : null;
-          
+
           const dbSub = await this.prisma.subscription.findFirst({
             where: { stripe_subscription_id: stripeSubscriptionId },
           });
@@ -257,7 +257,7 @@ export class StripeController {
         case 'customer.subscription.deleted': {
           const stripeSub = event.data.object as any;
           const stripeSubscriptionId = stripeSub.id;
-          
+
           const dbSub = await this.prisma.subscription.findFirst({
             where: { stripe_subscription_id: stripeSubscriptionId },
           });
