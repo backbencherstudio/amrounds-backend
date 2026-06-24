@@ -16,6 +16,7 @@ export class TestService {
   async createOneTest(user_id: string, createTestDto: CreateTestDto) {
     try {
       // Check free limit of 100 questions
+      /*
       const testAggregate = await this.prisma.test.aggregate({
         where: { user_id },
         _sum: {
@@ -39,6 +40,7 @@ export class TestService {
           };
         }
       }
+      */
 
       const { total_questions, test_mode, difficulty, topic } = createTestDto;
 
@@ -105,6 +107,7 @@ export class TestService {
         .slice(0, total_questions)
         .map((q) => q.id);
 
+      /*
       const isPayAsYouGo = subscription && subscription.status === 'active' && subscription.plan_type === 'PAY_AS_YOU_GO';
       if (isPayAsYouGo) {
         const remaining = subscription.remaining_credits ?? 0;
@@ -121,6 +124,7 @@ export class TestService {
           };
         }
       }
+      */
 
       // Create the Test and update credits in transaction
       const test = await this.prisma.$transaction(async (tx) => {
@@ -156,6 +160,7 @@ export class TestService {
           },
         });
 
+        /*
         if (isPayAsYouGo) {
           const remaining = subscription.remaining_credits ?? 0;
           const newRemaining = Math.max(0, remaining - selectedQuestionIds.length);
@@ -169,6 +174,7 @@ export class TestService {
             },
           });
         }
+        */
 
         return createdTest;
       });
