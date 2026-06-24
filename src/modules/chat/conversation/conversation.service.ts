@@ -358,6 +358,43 @@ export class ConversationService {
         };
       }
 
+      // Find all attachments in the conversation
+      const attachments = await this.prisma.attachment.findMany({
+        where: {
+          message: {
+            conversation_id: id,
+          },
+        },
+        select: {
+          id: true,
+          file: true,
+        },
+      });
+
+      // Delete attachment files from storage
+      for (const attachment of attachments) {
+        if (attachment.file) {
+          try {
+            await SojebStorage.delete(
+              appConfig().storageUrl.attachment + '/' + attachment.file,
+            );
+          } catch (storageError) {
+            console.error('Failed to delete attachment file from storage:', storageError);
+          }
+        }
+      }
+
+      // Delete attachment database records
+      if (attachments.length > 0) {
+        await this.prisma.attachment.deleteMany({
+          where: {
+            id: {
+              in: attachments.map((a) => a.id),
+            },
+          },
+        });
+      }
+
       await this.prisma.conversation.delete({
         where: { id },
       });
