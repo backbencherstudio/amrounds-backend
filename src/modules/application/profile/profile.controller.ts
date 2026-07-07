@@ -32,7 +32,7 @@ import {
 @UseGuards(JwtAuthGuard)
 @Controller('profile')
 export class ProfileController {
-  constructor(private readonly profileService: ProfileService) {}
+  constructor(private readonly profileService: ProfileService) { }
 
   @Get()
   getProfile(@Req() req: Request, @Query('user_id') user_id?: string) {
@@ -56,6 +56,7 @@ export class ProfileController {
   getConnections(@Req() req: Request, @Query() query: ConnectionsQueryDTO) {
     return this.profileService.getConnections(req.user.userId, query);
   }
+
   @Put('education')
   createEducation(
     @Body() createEducationDto: CreateEducationDto,
@@ -68,6 +69,7 @@ export class ProfileController {
       education_id,
     );
   }
+
   @Put('experience')
   createExperience(
     @Body() createExperienceDto: CreateExperienceDto,
@@ -80,6 +82,7 @@ export class ProfileController {
       experience_id,
     );
   }
+
   @Put('skill')
   createSkill(
     @Body() createSkillDto: CreateSkillDto,
@@ -92,6 +95,7 @@ export class ProfileController {
       skill_id,
     );
   }
+
   @Put('publication')
   createPublication(
     @Body() createPublicationDto: CreatePublicationDto,
@@ -132,6 +136,7 @@ export class ProfileController {
   ) {
     return this.profileService.reportUser(req.user.userId, target_id, reason);
   }
+
   @Put('follow-toggle/:target_id')
   followToggle(@Req() req: Request, @Param('target_id') target_id: string) {
     return this.profileService.followToggle(req.user.userId, target_id);
@@ -141,14 +146,17 @@ export class ProfileController {
   deleteEducation(@Param('id') id: string, @Req() req: Request) {
     return this.profileService.deleteEducation(id, req.user.userId);
   }
+
   @Delete('experience/:id')
   deleteExperience(@Param('id') id: string, @Req() req: Request) {
     return this.profileService.deleteExperience(id, req.user.userId);
   }
+
   @Delete('skill/:id')
   deleteSkill(@Param('id') id: string, @Req() req: Request) {
     return this.profileService.deleteSkill(id, req.user.userId);
   }
+
   @Delete('publication/:id')
   deletePublication(@Param('id') id: string, @Req() req: Request) {
     return this.profileService.deletePublication(id, req.user.userId);

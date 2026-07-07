@@ -9,7 +9,7 @@ export class MailService {
   constructor(
     @InjectQueue('mail-queue') private queue: Queue,
     private mailerService: MailerService,
-  ) {}
+  ) { }
 
   async sendMemberInvitation({ user, member, url }) {
     try {
@@ -62,7 +62,7 @@ export class MailService {
     type: string;
   }) {
     try {
-      const verificationLink = `${appConfig().app.client_app_url}/api/auth/verify-email?token=${params.token}&email=${params.email}&type=${params.type}`;
+      const verificationLink = `https://backend.tablerounds.ai/api/auth/verify-email?token=${params.token}&email=${params.email}&type=${params.type}`;
 
       // add to queue
       await this.queue.add('sendVerificationLink', {
