@@ -303,7 +303,7 @@ export class ProfileService {
 
         -- Calculate Search Rank (only if search term is provided, else 0)
         ${searchTerm
-          ? Prisma.sql`(COALESCE(similarity(u.name, ${searchTerm}), 0) + COALESCE(similarity(u.username, ${searchTerm}), 0) + GREATEST(${Prisma.join(countrySearchTerms.map(term => Prisma.sql`COALESCE(similarity(u.country, ${term}), 0)`))}))`
+          ? Prisma.sql`(COALESCE(similarity(u.name, ${searchTerm}), 0) + COALESCE(similarity(u.username, ${searchTerm}), 0) + COALESCE(similarity(u.city, ${searchTerm}), 0) + COALESCE(similarity(u.state, ${searchTerm}), 0) + GREATEST(${Prisma.join(countrySearchTerms.map(term => Prisma.sql`COALESCE(similarity(u.country, ${term}), 0)`))}))`
           : Prisma.sql`0`
         } as search_rank
 
@@ -317,6 +317,8 @@ export class ProfileService {
           ? Prisma.sql`AND (
             u.name ILIKE ${'%' + searchTerm + '%'} 
             OR u.username ILIKE ${'%' + searchTerm + '%'}
+            OR u.city ILIKE ${'%' + searchTerm + '%'}
+            OR u.state ILIKE ${'%' + searchTerm + '%'}
             OR ${Prisma.join(countrySearchTerms.map(term => Prisma.sql`u.country ILIKE ${'%' + term + '%'}`), ' OR ')}
           )`
           : Prisma.sql``
@@ -341,6 +343,8 @@ export class ProfileService {
           ? Prisma.sql`AND (
             u.name ILIKE ${'%' + searchTerm + '%'} 
             OR u.username ILIKE ${'%' + searchTerm + '%'}
+            OR u.city ILIKE ${'%' + searchTerm + '%'}
+            OR u.state ILIKE ${'%' + searchTerm + '%'}
             OR ${Prisma.join(countrySearchTerms.map(term => Prisma.sql`u.country ILIKE ${'%' + term + '%'}`), ' OR ')}
           )`
           : Prisma.sql``
@@ -463,7 +467,7 @@ export class ProfileService {
       throw new UnauthorizedException('User not found');
     }
 
-    const [user, testStats, rankResult, topicStats] = await Promise.all([
+    const [user, testStats, rankResult, topicStats, questionBankStats] = await Promise.all([
       this.prisma.user.findUnique({
         where: { id: user_id },
         select: {
@@ -592,6 +596,16 @@ export class ProfileService {
         ORDER BY correct_percentage DESC
         LIMIT 1
       `,
+
+      // Question bank usage: total active questions and unique questions answered by the user
+      this.prisma.$queryRaw<{ total: number; answered: number }[]>`
+        SELECT 
+          COUNT(DISTINCT q.id)::int as total,
+          COUNT(DISTINCT ua.question_id)::int as answered
+        FROM questions q
+        LEFT JOIN user_answers ua ON q.id = ua.question_id AND ua.user_id = ${user_id}
+        WHERE q.deleted_at IS NULL
+      `,
     ]);
 
     if (!user) {
@@ -612,6 +626,9 @@ export class ProfileService {
         correct_percentage: topicStats[0].correct_percentage,
       }
       : null;
+
+    const { total: totalBankQ = 0, answered: answeredBankQ = 0 } = questionBankStats[0] || {};
+    const question_bank_usage = totalBankQ > 0 ? +((answeredBankQ / totalBankQ) * 100).toFixed(2) : 0;
 
     if (user.type == 'admin') {
       return {
@@ -656,6 +673,7 @@ export class ProfileService {
           correct_percentage,
           ranking,
           best_topic,
+          question_bank_usage,
         },
       },
     };
