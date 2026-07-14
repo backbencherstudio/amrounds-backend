@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
     IsArray,
+    IsBoolean,
     IsEnum,
     IsNotEmpty,
     IsNumber,
@@ -15,6 +16,18 @@ export enum PlanType {
 }
 
 export class CreateSubscriptionPlanDto {
+    @ApiPropertyOptional({
+        example: false,
+        description: 'Whether the plan is popular',
+        default: false,
+    })
+    @IsBoolean()
+    @IsOptional()
+    is_popular?: boolean;
+
+
+
+
     @ApiProperty({
         example: 'Basic Plan',
         description: 'The name of the subscription plan',
