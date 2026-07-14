@@ -744,6 +744,7 @@ model Plan {
   updated_at DateTime  @default(now())
   deleted_at DateTime?
 
+  is_popular     Boolean  @default(false)
   name           String?
   type           PlanType @default(MONTHLY)
   price          Decimal
