@@ -112,7 +112,7 @@ export class StripeController {
               const stripeSub = (await StripePayment.stripe.subscriptions.retrieve(
                 stripeSubscriptionId,
               )) as any;
-              const periodEndUnix = stripeSub.items?.data?.[0]?.current_period_end;
+              const periodEndUnix = stripeSub.current_period_end || stripeSub.items?.data?.[0]?.current_period_end;
               currentPeriodEnd = periodEndUnix ? new Date(periodEndUnix * 1000) : null;
               status = stripeSub.status;
             }
@@ -175,15 +175,15 @@ export class StripeController {
           }
           break;
         }
+        case 'invoice.paid':
         case 'invoice.payment_succeeded': {
           const invoice = event.data.object as any;
-          if (invoice.subscription) {
-            const stripeSubscriptionId = invoice.subscription as string;
-
+          const stripeSubscriptionId = (invoice.subscription as string) || (invoice.parent?.subscription_details?.subscription as string);
+          if (stripeSubscriptionId) {
             const stripeSub = (await StripePayment.stripe.subscriptions.retrieve(
               stripeSubscriptionId,
             )) as any;
-            const periodEndUnix = stripeSub.items?.data?.[0]?.current_period_end;
+            const periodEndUnix = stripeSub.current_period_end || stripeSub.items?.data?.[0]?.current_period_end;
             const currentPeriodEnd = periodEndUnix ? new Date(periodEndUnix * 1000) : null;
 
             const dbSub = await this.prisma.subscription.findFirst({
@@ -220,7 +220,7 @@ export class StripeController {
         case 'customer.subscription.updated': {
           const stripeSub = event.data.object as any;
           const stripeSubscriptionId = stripeSub.id;
-          const periodEndUnix = stripeSub.items?.data?.[0]?.current_period_end;
+          const periodEndUnix = stripeSub.current_period_end || stripeSub.items?.data?.[0]?.current_period_end;
           const currentPeriodEnd = periodEndUnix ? new Date(periodEndUnix * 1000) : null;
 
           const dbSub = await this.prisma.subscription.findFirst({
