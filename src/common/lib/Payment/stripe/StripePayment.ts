@@ -5,16 +5,31 @@ import { Fetch } from '../../Fetch';
 import * as dotenv from 'dotenv';
 dotenv.config();
 
-const STRIPE_SECRET_KEY = appConfig().payment.stripe.secret_key;
+let _stripe: stripe | null = null;
+const getStripe = (): stripe => {
+  if (!_stripe) {
+    const STRIPE_SECRET_KEY = appConfig().payment.stripe.secret_key;
+    _stripe = new stripe(STRIPE_SECRET_KEY, {
+      apiVersion: '2025-03-31.basil',
+    });
+  }
+  return _stripe;
+};
 
-const Stripe = new stripe(STRIPE_SECRET_KEY, {
-  apiVersion: '2025-03-31.basil',
+const Stripe = new Proxy({} as stripe, {
+  get(target, prop, receiver) {
+    const instance = getStripe();
+    const value = Reflect.get(instance, prop, receiver);
+    if (typeof value === 'function') {
+      return value.bind(instance);
+    }
+    return value;
+  },
 });
-
-const STRIPE_WEBHOOK_SECRET = appConfig().payment.stripe.webhook_secret;
 /**
  * Stripe payment method helper
  */
+
 export class StripePayment {
   static async createPaymentMethod({
     card,
@@ -491,10 +506,11 @@ export class StripePayment {
   }
 
   static handleWebhook(rawBody: string, sig: string | string[]): stripe.Event {
+    const webhookSecret = appConfig().payment.stripe.webhook_secret;
     const event = Stripe.webhooks.constructEvent(
       rawBody,
       sig,
-      STRIPE_WEBHOOK_SECRET,
+      webhookSecret,
     );
     return event;
   }
