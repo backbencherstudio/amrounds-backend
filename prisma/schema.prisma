@@ -119,6 +119,8 @@ model User {
   userAnswers          UserAnswer[]
   tests                Test[]
   subscription         Subscription?
+  speciality           Speciality?          @relation(fields: [specialityId], references: [id])
+  specialityId         String?
 
   @@map("users")
 }
@@ -506,6 +508,10 @@ model Questions {
   answerOptions AnswerOptions[]
   userAnswers   UserAnswer[]
   tests         Test[]
+  speciality    Speciality?     @relation(fields: [specialityId], references: [id])
+  specialityId  String?
+  topics        Topics?         @relation(fields: [topicsId], references: [id])
+  topicsId      String?
 
   @@map("questions")
 }
@@ -780,4 +786,36 @@ model Subscription {
   current_period_end DateTime? // Subscription end date
 
   @@map("subscriptions")
+}
+
+model Speciality {
+  id         String   @id @default(cuid())
+  name       String
+  image_url  String
+  is_active  Boolean  @default(true)
+  // order       Int       @default(0)
+  created_at DateTime @default(now())
+  updated_at DateTime @default(now())
+
+  user      User[]
+  topics    Topics[]
+  questions Questions[]
+
+  @@map("specialities")
+}
+
+model Topics {
+  id            String     @id @default(cuid())
+  name          String
+  image_url     String
+  is_active     Boolean    @default(true)
+  created_at    DateTime   @default(now())
+  updated_at    DateTime   @default(now())
+  speciality    Speciality @relation(fields: [speciality_id], references: [id])
+  speciality_id String
+
+  questions Questions[]
+
+  @@unique([speciality_id, name])
+  @@map("topics")
 }
