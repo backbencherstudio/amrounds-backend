@@ -37,6 +37,7 @@ async function bootstrap() {
       'https://tablerounds.ai',
       'http://localhost:3000',
       'http://localhost:3001',
+      'http://localhost:3002',
     ], // Added tablerounds.ai and common local ports,
     credentials: true,
   });
