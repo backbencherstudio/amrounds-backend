@@ -119,8 +119,8 @@ model User {
   userAnswers          UserAnswer[]
   tests                Test[]
   subscription         Subscription?
-  speciality           Speciality?          @relation(fields: [specialityId], references: [id])
-  specialityId         String?
+  speciality_id        String?
+  speciality           Speciality?          @relation(fields: [speciality_id], references: [id])
 
   @@map("users")
 }
@@ -503,15 +503,12 @@ model Questions {
   user_id String?
   user    User?   @relation(fields: [user_id], references: [id])
 
-  difficulty    difficulty?
-  topic         topic[]
-  answerOptions AnswerOptions[]
-  userAnswers   UserAnswer[]
-  tests         Test[]
-  speciality    Speciality?     @relation(fields: [specialityId], references: [id])
-  specialityId  String?
-  topics        Topics?         @relation(fields: [topicsId], references: [id])
-  topicsId      String?
+  difficulty       difficulty?
+  topic            topic[]
+  answerOptions    AnswerOptions[]
+  userAnswers      UserAnswer[]
+  tests            Test[]
+  specialty_topics QuestionSpecialtyTopic[]
 
   @@map("questions")
 }
@@ -694,9 +691,13 @@ model Test {
   user_id String
   user    User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
+  speciality_id String?
+  speciality    Speciality? @relation(fields: [speciality_id], references: [id])
+
   test_mode       String[]
   difficulty      difficulty[]
-  topic           topic[]
+  topic           topic[]      @default([])
+  topic_ids       String[]     @default([])
   // Test settings
   total_attempts  Int          @default(0)
   total_questions Int
@@ -797,9 +798,10 @@ model Speciality {
   created_at DateTime @default(now())
   updated_at DateTime @default(now())
 
-  user      User[]
-  topics    Topics[]
-  questions Questions[]
+  user                      User[]
+  topics                    Topics[]
+  tests                     Test[]
+  question_specialty_topics QuestionSpecialtyTopic[]
 
   @@map("specialities")
 }
@@ -811,11 +813,29 @@ model Topics {
   is_active     Boolean    @default(true)
   created_at    DateTime   @default(now())
   updated_at    DateTime   @default(now())
-  speciality    Speciality @relation(fields: [speciality_id], references: [id])
+  speciality    Speciality @relation(fields: [speciality_id], references: [id], onDelete: Cascade)
   speciality_id String
 
-  questions Questions[]
+  question_specialty_topics QuestionSpecialtyTopic[]
 
   @@unique([speciality_id, name])
   @@map("topics")
+}
+
+model QuestionSpecialtyTopic {
+  id         String   @id @default(cuid())
+  created_at DateTime @default(now())
+
+  question_id   String
+  speciality_id String
+  topic_id      String
+
+  question   Questions  @relation(fields: [question_id], references: [id], onDelete: Cascade)
+  speciality Speciality @relation(fields: [speciality_id], references: [id], onDelete: Cascade)
+  topic      Topics     @relation(fields: [topic_id], references: [id], onDelete: Cascade)
+
+  @@unique([question_id, speciality_id])
+  @@index([speciality_id])
+  @@index([topic_id])
+  @@map("question_specialty_topics")
 }
