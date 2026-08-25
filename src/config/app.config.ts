@@ -91,6 +91,7 @@ export default () => ({
     question: 'question', // /
     verification_doc: 'verification-docs',
     cv: 'cv',
+    speciality: 'speciality',
   },
 
   defaultUser: {

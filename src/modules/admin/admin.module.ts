@@ -9,6 +9,7 @@ import { HelpModule } from './help/help.module';
 import { QuestionsModule } from './questions/questions.module';
 import { OverviewModule } from './overview/overview.module';
 import { SubscriptionPlanModule } from './subscription-plan/subscription-plan.module';
+import { SpecialityModule } from './speciality/speciality.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { SubscriptionPlanModule } from './subscription-plan/subscription-plan.mo
     QuestionsModule,
     OverviewModule,
     SubscriptionPlanModule,
+    SpecialityModule,
   ],
 })
 export class AdminModule {}

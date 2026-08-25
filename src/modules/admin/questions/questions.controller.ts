@@ -26,12 +26,12 @@ import { FileInterceptor, FileFieldsInterceptor } from '@nestjs/platform-express
 import { memoryStorage } from 'multer';
 
 @ApiBearerAuth()
-@ApiTags('Help')
+@ApiTags('Questions')
 @UseGuards(JwtAuthGuard)
 @Roles(Role.ADMIN)
 @Controller('admin/questions')
 export class QuestionsController {
-  constructor(private readonly questionsService: QuestionsService) {}
+  constructor(private readonly questionsService: QuestionsService) { }
 
   @Post()
   @UseInterceptors(
@@ -43,19 +43,19 @@ export class QuestionsController {
       {
         storage: memoryStorage(),
         limits: {
-        fileSize: 15 * 1024 * 1024,
-        fieldSize: 15 * 1024 * 1024,
-      },
-      fileFilter: (req, file, cb) => {
-        if (!file.mimetype.match(/\/(jpg|jpeg|png|gif)$/)) {
-          return cb(
-            new BadRequestException('Only image files are allowed!'),
-            false,
-          );
-        }
-        cb(null, true);
-      },
-    }),
+          fileSize: 15 * 1024 * 1024,
+          fieldSize: 15 * 1024 * 1024,
+        },
+        fileFilter: (req, file, cb) => {
+          if (!file.mimetype.match(/\/(jpg|jpeg|png|gif)$/)) {
+            return cb(
+              new BadRequestException('Only image files are allowed!'),
+              false,
+            );
+          }
+          cb(null, true);
+        },
+      }),
   )
   createOneQuestion(
     @Req() req: Request,
@@ -106,19 +106,19 @@ export class QuestionsController {
       {
         storage: memoryStorage(),
         limits: {
-        fileSize: 10 * 1024 * 1024,
-        fieldSize: 10 * 1024 * 1024,
-      },
-      fileFilter: (req, file, cb) => {
-        if (!file.mimetype.match(/\/(jpg|jpeg|png|gif)$/)) {
-          return cb(
-            new BadRequestException('Only image files are allowed!'),
-            false,
-          );
-        }
-        cb(null, true);
-      },
-    }),
+          fileSize: 10 * 1024 * 1024,
+          fieldSize: 10 * 1024 * 1024,
+        },
+        fileFilter: (req, file, cb) => {
+          if (!file.mimetype.match(/\/(jpg|jpeg|png|gif)$/)) {
+            return cb(
+              new BadRequestException('Only image files are allowed!'),
+              false,
+            );
+          }
+          cb(null, true);
+        },
+      }),
   )
   updateOneQuestion(
     @Param('id') id: string,
