@@ -12,14 +12,12 @@ import { OnModuleInit } from '@nestjs/common';
 import * as jwt from 'jsonwebtoken';
 import * as path from 'path';
 import * as fs from 'fs';
-import appConfig from '../../../config/app.config';
+import appConfig, { corsOptions } from '../../../config/app.config';
 import { ChatRepository } from '../../../common/repository/chat/chat.repository';
 import { MessageStatus } from 'prisma/generated/enums';
 
 @WebSocketGateway({
-  cors: {
-    origin: '*',
-  },
+  cors: corsOptions,
   maxHttpBufferSize: 1e8, // 100MB
 })
 export class MessageGateway

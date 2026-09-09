@@ -8,7 +8,7 @@ import { join } from 'path';
 import * as express from 'express';
 // internal imports
 import { AppModule } from './app.module';
-import appConfig from './config/app.config';
+import appConfig, { corsOptions } from './config/app.config';
 import { CustomExceptionFilter } from './common/exception/custom-exception.filter';
 import { SojebStorage } from './common/lib/Disk/SojebStorage';
 
@@ -32,18 +32,11 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api');
 
-  app.enableCors({
-    origin: [
-      'https://tablerounds.ai',
-      'http://localhost:3000',
-      'http://localhost:3001',
-      'http://localhost:3002',
-    ], // Added tablerounds.ai and common local ports,
-    credentials: true,
-  });
+  app.enableCors(corsOptions);
   app.use(
     helmet({
       crossOriginResourcePolicy: { policy: 'cross-origin' },
+      crossOriginEmbedderPolicy: false,
     }),
   );
   // Enable it, if special charactrers not encoding perfectly

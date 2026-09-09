@@ -1,14 +1,22 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsBoolean, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import {
+  IsBoolean,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MaxLength,
+} from 'class-validator';
 
 export class UpdateSpecialityDto {
   @ApiPropertyOptional({
     description: 'Speciality name',
     example: 'Cardiology',
   })
-  @IsString()
+  @IsString({ message: 'Speciality name must be a string' })
   @IsOptional()
+  @MaxLength(255, { message: 'Speciality name must be at most 255 characters' })
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   name?: string;
 
   @ApiPropertyOptional({
@@ -38,8 +46,10 @@ export class AddTopicDto {
     description: 'Topic name',
     example: 'Heart Failure',
   })
-  @IsString()
-  @IsNotEmpty()
+  @IsString({ message: 'Topic name must be a string' })
+  @IsNotEmpty({ message: 'Topic name is required' })
+  @MaxLength(255, { message: 'Topic name must be at most 255 characters' })
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   name: string;
 
   @ApiPropertyOptional({
@@ -69,8 +79,10 @@ export class UpdateTopicDto {
     description: 'Topic name',
     example: 'Heart Failure',
   })
-  @IsString()
+  @IsString({ message: 'Topic name must be a string' })
   @IsOptional()
+  @MaxLength(255, { message: 'Topic name must be at most 255 characters' })
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   name?: string;
 
   @ApiPropertyOptional({

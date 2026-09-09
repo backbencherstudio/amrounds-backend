@@ -13,12 +13,10 @@ import Redis from 'ioredis';
 import { NotificationService } from './notification.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { UpdateNotificationDto } from './dto/update-notification.dto';
-import appConfig from '../../../config/app.config';
+import appConfig, { corsOptions } from '../../../config/app.config';
 
 @WebSocketGateway({
-  cors: {
-    origin: '*',
-  },
+  cors: corsOptions,
 })
 export class NotificationGateway
   implements

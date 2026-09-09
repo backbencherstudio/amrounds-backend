@@ -6,6 +6,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  MaxLength,
   ValidateNested,
 } from 'class-validator';
 
@@ -14,8 +15,10 @@ export class CreateTopicDto {
     description: 'Topic name',
     example: 'Heart Failure',
   })
-  @IsString()
-  @IsNotEmpty()
+  @IsString({ message: 'Topic name must be a string' })
+  @IsNotEmpty({ message: 'Topic name is required' })
+  @MaxLength(255, { message: 'Topic name must be at most 255 characters' })
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   name: string;
 
   @ApiPropertyOptional({
@@ -50,8 +53,10 @@ export class CreateSpecialityDto {
     description: 'Speciality name',
     example: 'Cardiology',
   })
-  @IsString()
-  @IsNotEmpty()
+  @IsString({ message: 'Speciality name must be a string' })
+  @IsNotEmpty({ message: 'Speciality name is required' })
+  @MaxLength(255, { message: 'Speciality name must be at most 255 characters' })
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   name: string;
 
   @ApiPropertyOptional({
@@ -78,7 +83,7 @@ export class CreateSpecialityDto {
     description: 'List of topics under this speciality (can be passed as JSON string in multipart/form-data)',
     type: [CreateTopicDto],
   })
-  @IsArray()
+  @IsArray({ message: 'Topics must be a valid JSON array' })
   @IsOptional()
   @ValidateNested({ each: true })
   @Type(() => CreateTopicDto)

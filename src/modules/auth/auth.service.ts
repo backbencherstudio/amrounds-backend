@@ -311,13 +311,16 @@ export class AuthService {
 
       const user = await this.userRepository.getUserDetails(userId);
 
-      // store refreshToken
-      await this.redis.set(
-        `refresh_token:${user.id}`,
-        refreshToken,
-        'EX',
-        60 * 60 * 24 * 7, // 7 days in seconds
-      );
+      try {
+        await this.redis.set(
+          `refresh_token:${user.id}`,
+          refreshToken,
+          'EX',
+          60 * 60 * 24 * 7, // 7 days in seconds
+        );
+      } catch (redisError) {
+        // Login still succeeds if Redis is unavailable locally
+      }
 
       return {
         success: true,

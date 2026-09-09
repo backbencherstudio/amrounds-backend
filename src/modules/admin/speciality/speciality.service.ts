@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  HttpException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -121,12 +122,110 @@ export class SpecialityService {
   }
 
   /**
+   * Validate that S3/local storage is configured before uploading
+   */
+  private assertStorageReady() {
+    const config = SojebStorage.getConfig();
+
+    if (!config) {
+      throw new BadRequestException(
+        'Image upload is unavailable because file storage is not configured.',
+      );
+    }
+
+    if (config.driver === 's3') {
+      const missing: string[] = [];
+      const connection = config.connection || {};
+
+      if (!connection.awsDefaultRegion) missing.push('AWS_DEFAULT_REGION');
+      if (!connection.awsBucket) missing.push('AWS_BUCKET');
+      if (!connection.awsAccessKeyId) missing.push('AWS_ACCESS_KEY_ID');
+      if (!connection.awsSecretAccessKey) missing.push('AWS_SECRET_ACCESS_KEY');
+
+      if (missing.length > 0) {
+        throw new BadRequestException(
+          `Image upload failed because file storage is not configured. Missing: ${missing.join(', ')}.`,
+        );
+      }
+    }
+  }
+
+  /**
+   * Validate uploaded image file
+   */
+  private validateImageFile(file: Express.Multer.File) {
+    if (!file) {
+      throw new BadRequestException('Image file is required');
+    }
+
+    const fileName = file.originalname || 'unknown';
+
+    if (!file.buffer || file.buffer.length === 0) {
+      throw new BadRequestException(`Image file "${fileName}" is empty`);
+    }
+
+    const maxSize = 15 * 1024 * 1024;
+    if (file.size > maxSize) {
+      throw new BadRequestException(
+        `Image "${fileName}" exceeds the 15MB size limit`,
+      );
+    }
+
+    if (
+      file.mimetype &&
+      !file.mimetype.match(/\/(jpg|jpeg|png|gif|webp|svg\+xml)$/i)
+    ) {
+      throw new BadRequestException(
+        `File "${fileName}" is not an allowed image format (jpg, jpeg, png, gif, webp, svg)`,
+      );
+    }
+  }
+
+  /**
+   * Map storage/AWS errors to a client-safe validation message
+   */
+  private getUploadErrorMessage(error: any, fileName: string): string {
+    const raw = String(error?.message || '');
+    const name = String(error?.name || '');
+
+    if (/region is missing/i.test(raw)) {
+      return 'Image upload failed: AWS region is not configured. Set AWS_DEFAULT_REGION in the environment.';
+    }
+    if (
+      /credentials/i.test(raw) ||
+      /access key/i.test(raw) ||
+      name === 'InvalidAccessKeyId' ||
+      name === 'SignatureDoesNotMatch'
+    ) {
+      return 'Image upload failed: AWS credentials are missing or invalid.';
+    }
+    if (
+      name === 'NoSuchBucket' ||
+      /NoSuchBucket/i.test(raw) ||
+      (/bucket/i.test(raw) && /missing|not exist/i.test(raw))
+    ) {
+      return 'Image upload failed: AWS bucket is missing or invalid. Check AWS_BUCKET.';
+    }
+    if (name === 'AccessDenied' || /AccessDenied/i.test(raw)) {
+      return 'Image upload failed: AWS access was denied. Check bucket permissions.';
+    }
+    if (name === 'TimeoutError' || /timeout|ENOTFOUND|ECONNREFUSED/i.test(raw)) {
+      return 'Image upload failed: could not reach the storage service. Please try again.';
+    }
+
+    return `Failed to upload image "${fileName}". Please try again or use a valid image file.`;
+  }
+
+  /**
    * Upload an image buffer to SojebStorage
    */
   private async uploadImage(
     file: Express.Multer.File,
     uploadedTracker: string[],
   ): Promise<string> {
+    this.validateImageFile(file);
+    this.assertStorageReady();
+
     try {
       const randomStr = StringHelper.randomString(8);
       const sanitizedOriginalName = file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_');
@@ -140,8 +239,12 @@ export class SpecialityService {
       uploadedTracker.push(fileName);
       return fileName;
     } catch (error) {
-      throw new InternalServerErrorException(
-        `Failed to upload image (${file.originalname}): ${error.message}`,
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      throw new BadRequestException(
+        this.getUploadErrorMessage(error, file.originalname || 'unknown'),
       );
     }
   }
@@ -296,14 +399,12 @@ export class SpecialityService {
         await this.cleanupUploadedFiles(uploadedTracker);
       }
 
-      if (error instanceof BadRequestException || error instanceof NotFoundException) {
+      if (error instanceof HttpException) {
         throw error;
       }
 
       console.error('Speciality creation error:', error);
-      throw new InternalServerErrorException(
-        error.message || 'Failed to create speciality',
-      );
+      throw new InternalServerErrorException('Failed to create speciality');
     }
   }
 
@@ -509,12 +610,10 @@ export class SpecialityService {
       if (uploadedTracker.length > 0) {
         await this.cleanupUploadedFiles(uploadedTracker);
       }
-      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+      if (error instanceof HttpException) {
         throw error;
       }
-      throw new InternalServerErrorException(
-        error.message || 'Failed to update speciality',
-      );
+      throw new InternalServerErrorException('Failed to update speciality');
     }
   }
 
@@ -658,13 +757,11 @@ export class SpecialityService {
       if (uploadedTracker.length > 0) {
         await this.cleanupUploadedFiles(uploadedTracker);
       }
-      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+      if (error instanceof HttpException) {
         throw error;
       }
       console.error('Add topic error:', error);
-      throw new InternalServerErrorException(
-        error.message || 'Failed to add topic',
-      );
+      throw new InternalServerErrorException('Failed to add topic');
     }
   }
 
@@ -813,12 +910,10 @@ export class SpecialityService {
       if (uploadedTracker.length > 0) {
         await this.cleanupUploadedFiles(uploadedTracker);
       }
-      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+      if (error instanceof HttpException) {
         throw error;
       }
-      throw new InternalServerErrorException(
-        error.message || 'Failed to update topic',
-      );
+      throw new InternalServerErrorException('Failed to update topic');
     }
   }
 }

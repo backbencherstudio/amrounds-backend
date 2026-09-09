@@ -43,11 +43,14 @@ export class SeedCommand extends CommandRunner {
       password: appConfig().defaultUser.system.password,
     });
 
-    await this.prisma.roleUser.create({
-      data: {
-        user_id: systemUser.id,
-        role_id: '1',
-      },
+    await this.prisma.roleUser.createMany({
+      data: [
+        {
+          user_id: systemUser.id,
+          role_id: '1',
+        },
+      ],
+      skipDuplicates: true,
     });
 
     // dashboard admin
@@ -57,11 +60,14 @@ export class SeedCommand extends CommandRunner {
       password: appConfig().defaultUser.admin.password,
     });
 
-    await this.prisma.roleUser.create({
-      data: {
-        user_id: adminUser.id,
-        role_id: '2',
-      },
+    await this.prisma.roleUser.createMany({
+      data: [
+        {
+          user_id: adminUser.id,
+          role_id: '2',
+        },
+      ],
+      skipDuplicates: true,
     });
   }
 
@@ -116,6 +122,7 @@ export class SeedCommand extends CommandRunner {
 
     await this.prisma.permission.createMany({
       data: permissions,
+      skipDuplicates: true,
     });
   }
 
@@ -135,6 +142,7 @@ export class SeedCommand extends CommandRunner {
       });
     }
     await this.prisma.permissionRole.createMany({
+      skipDuplicates: true,
       data: adminPermissionRoleArray,
     });
     // -----------
@@ -154,6 +162,7 @@ export class SeedCommand extends CommandRunner {
       });
     }
     await this.prisma.permissionRole.createMany({
+      skipDuplicates: true,
       data: projectAdminPermissionRoleArray,
     });
     // -----------
@@ -179,6 +188,7 @@ export class SeedCommand extends CommandRunner {
       });
     }
     await this.prisma.permissionRole.createMany({
+      skipDuplicates: true,
       data: projectManagerPermissionRoleArray,
     });
     // -----------
@@ -203,6 +213,7 @@ export class SeedCommand extends CommandRunner {
       });
     }
     await this.prisma.permissionRole.createMany({
+      skipDuplicates: true,
       data: memberPermissionRoleArray,
     });
     // -----------
@@ -225,6 +236,7 @@ export class SeedCommand extends CommandRunner {
       });
     }
     await this.prisma.permissionRole.createMany({
+      skipDuplicates: true,
       data: viewerPermissionRoleArray,
     });
     // -----------
@@ -232,6 +244,7 @@ export class SeedCommand extends CommandRunner {
 
   async roleSeed() {
     await this.prisma.role.createMany({
+      skipDuplicates: true,
       data: [
         // system role
         {

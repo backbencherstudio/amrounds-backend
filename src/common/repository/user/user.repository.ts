@@ -82,17 +82,33 @@ export class UserRepository {
    */
   async createSuAdminUser({ username, email, password }) {
     try {
-      password = await bcrypt.hash(password, appConfig().security.salt);
+      const hashedPassword = await bcrypt.hash(
+        password,
+        appConfig().security.salt,
+      );
 
-      const user = await this.prisma.user.create({
+      const existing = await this.prisma.user.findFirst({
+        where: { email },
+      });
+
+      if (existing) {
+        return this.prisma.user.update({
+          where: { id: existing.id },
+          data: {
+            password: hashedPassword,
+            type: 'su_admin',
+          },
+        });
+      }
+
+      return this.prisma.user.create({
         data: {
           username: username,
           email: email,
-          password: password,
+          password: hashedPassword,
           type: 'su_admin',
         },
       });
-      return user;
     } catch (error) {
       throw error;
     }
@@ -105,13 +121,38 @@ export class UserRepository {
    */
   async createAdminUser({ username, email, password }) {
     try {
-      password = await bcrypt.hash(password, appConfig().security.salt);
+      const hashedPassword = await bcrypt.hash(
+        password,
+        appConfig().security.salt,
+      );
 
-      const user = await this.prisma.user.create({
+      const existingByEmail = await this.prisma.user.findFirst({
+        where: { email },
+      });
+
+      if (existingByEmail) {
+        return this.prisma.user.update({
+          where: { id: existingByEmail.id },
+          data: {
+            password: hashedPassword,
+            type: 'admin',
+            status: 1,
+            approved: true,
+            approved_at: existingByEmail.approved_at ?? new Date(),
+            email_verified_at: existingByEmail.email_verified_at ?? new Date(),
+          },
+        });
+      }
+
+      const existingByUsername = await this.prisma.user.findFirst({
+        where: { username },
+      });
+
+      return this.prisma.user.create({
         data: {
-          username: username,
-          email: email,
-          password: password,
+          username: existingByUsername ? `${username}_dashboard` : username,
+          email,
+          password: hashedPassword,
           name: 'Admin',
           type: 'admin',
           status: 1,
@@ -120,7 +161,6 @@ export class UserRepository {
           email_verified_at: new Date(),
         },
       });
-      return user;
     } catch (error) {
       throw error;
     }
