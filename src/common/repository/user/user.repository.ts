@@ -99,6 +99,34 @@ export class UserRepository {
   }
 
   /**
+   * Create dashboard admin user
+   * @param param0
+   * @returns
+   */
+  async createAdminUser({ username, email, password }) {
+    try {
+      password = await bcrypt.hash(password, appConfig().security.salt);
+
+      const user = await this.prisma.user.create({
+        data: {
+          username: username,
+          email: email,
+          password: password,
+          name: 'Admin',
+          type: 'admin',
+          status: 1,
+          approved: true,
+          approved_at: new Date(),
+          email_verified_at: new Date(),
+        },
+      });
+      return user;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
    * Invite user under tenant
    * @param param0
    * @returns

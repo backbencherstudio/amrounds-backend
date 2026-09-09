@@ -49,6 +49,20 @@ export class SeedCommand extends CommandRunner {
         role_id: '1',
       },
     });
+
+    // dashboard admin
+    const adminUser = await this.userRepository.createAdminUser({
+      username: appConfig().defaultUser.admin.username,
+      email: appConfig().defaultUser.admin.email,
+      password: appConfig().defaultUser.admin.password,
+    });
+
+    await this.prisma.roleUser.create({
+      data: {
+        user_id: adminUser.id,
+        role_id: '2',
+      },
+    });
   }
 
   async permissionSeed() {

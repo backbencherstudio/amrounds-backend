@@ -100,5 +100,10 @@ export default () => ({
       email: process.env.SYSTEM_EMAIL,
       password: process.env.SYSTEM_PASSWORD,
     },
+    admin: {
+      username: process.env.ADMIN_USERNAME,
+      email: process.env.ADMIN_EMAIL,
+      password: process.env.ADMIN_PASSWORD,
+    },
   },
 });
